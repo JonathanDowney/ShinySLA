@@ -1,42 +1,44 @@
 library(shiny)
 library(TAM)
-library(rhandsontable)
 
+sample1 <- unique(tolower(scan(file = "texts/sample1.txt", what="char")))
+sample1 <- gsub("[[:punct:]]", "", sample1)
+print(sample1)
 {
   ui <- fluidPage(
         tags$p("Enter your list!"),
         tags$br(),
-        rHandsontableOutput("hot"),
+        textInput("text1", "Word list", value = "word1", width = '100px', placeholder = NULL),
+        textInput("text2", NULL, value = "word2", width = '100px', placeholder = NULL),
         tags$br(),
         actionButton(inputId="enter",label="Submit my list"),
         tags$br(),
         tags$br(),
-        rHandsontableOutput("hot2"),
+        textOutput("textout"),
       )
-        
+
   server <- function(input, output){
     data = (data.frame(words = c("word1", "word2", "word3"), stringsAsFactors = FALSE))
-    output$hot <- renderRHandsontable({rhandsontable(data) %>%
-        # ?hot_validate_character for red cell formatting
-        hot_cols(validator = "
-           function (value, callback) {
-              callback(value == ('test'));
-           }", allowInvalid = TRUE)
+
+    output$text2out <- renderText({
+      validate(
+        need(input$text1 != '' || input$text2 != '', 'At least one word blank is empty!')
+      )
+      req(input$text1 == "word1" || input$text2 == "word2")
+      "Test cannot be a value"
     })
-    
+
     observeEvent(input$enter, {
-      DF=hot_to_r(input$hot)
-      print(DF)
-      DF2 <- as.data.frame(DF[[2,1]])
-      D1 <- read.csv("testfile.csv")
-      print(head(D1))
-      mod1 <- tam(D1)  
-      print(mod1)
-      output$hot2 <- renderRHandsontable({rhandsontable(DF2)})
-      
+      if(input$text1!=""&&input$text2!="")
+      {
+        output$textout <- renderText({"BINGO!"})
+      }
+      else
+      {
+        showModal(modalDialog(title ="Warning!!!", "Please fill all the fields before you click the Submit buttion!!!"))
+      }
     })
-    
   }
-  
+
   shinyApp(ui, server)
 }

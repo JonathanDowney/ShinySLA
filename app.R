@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(TAM)
 
 sample1 <- unique(tolower(scan(file = "texts/sample1.txt", what="char")))
@@ -6,15 +7,26 @@ sample1 <- gsub("[[:punct:]]", "", sample1)
 print(sample1)
 {
   ui <- fluidPage(
-        tags$p("Enter your list!"),
-        tags$br(),
-        textInput("text1", "Word list", value = "word1", width = '100px', placeholder = NULL),
-        textInput("text2", NULL, value = "word2", width = '100px', placeholder = NULL),
-        tags$br(),
-        actionButton(inputId="enter",label="Submit my list"),
-        tags$br(),
-        tags$br(),
-        textOutput("textout"),
+          theme = "styles.css",
+          fluidRow("Enter your list!"),
+          fluidRow(
+            column(4, offset = 8,
+              wellPanel(
+                fluidRow(
+                  column(12, align="center",
+                    textInput("text1", "Word list", value = "word1", width = '100px', placeholder = NULL),
+                    textInput("text2", NULL, value = "word2", width = '100px', placeholder = NULL)
+                  )
+                )
+              )
+            )
+          ),
+          fluidRow(
+            actionButton(inputId="enter",label="Submit my list"),
+            tags$br(),
+            tags$p("hello", id = "test1"),
+            textOutput("textout")
+          )
       )
 
   server <- function(input, output){
@@ -35,7 +47,7 @@ print(sample1)
       }
       else
       {
-        showModal(modalDialog(title ="Warning!!!", "Please fill all the fields before you click the Submit buttion!!!"))
+        showModal(modalDialog(title ="Error", "Please fill all the fields before you click the 'Submit' buttion!"))
       }
     })
   }

@@ -4,7 +4,6 @@ library(shinydashboard)
 library(TAM)
 
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
-
 setwd(working_directory)
 
 fileslist <- list.files(path = working_directory)
@@ -13,8 +12,6 @@ for (i in fileslist){
   #scan files in from "file list"
   corpusfile <- scan(file = i, what="char")
 }
-
-
 
 essay1 <- (scan(file = fileslist[1], what="char"))
 essay2 <- (scan(file = fileslist[2], what="char"))
@@ -53,7 +50,7 @@ print(head(corpusfile))
 
         #Menu Item: Step 3
         conditionalPanel(
-          condition = "input.buildingDone == 1",
+          condition = "input.buildingDone == 1 && output.listValidate == 'List Validated!'",
           sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
               menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
           )),
@@ -102,8 +99,8 @@ print(head(corpusfile))
                   column(4, align="center",
                     wellPanel(
                       textInput("signIn1", "Identifer", value = "Identifier", width = '100px', placeholder = NULL),
-                      textInput("signIn1", "Age", value = "Age", width = '100px', placeholder = NULL),
-                      textInput("signIn1", "Occupation", value = "Occupation", width = '100px', placeholder = NULL)
+                      textInput("signIn2", "Age", value = "Age", width = '100px', placeholder = NULL),
+                      textInput("signIn3", "Occupation", value = "Occupation", width = '100px', placeholder = NULL)
                     )
                   ),
                 tags$br(),
@@ -129,12 +126,12 @@ print(head(corpusfile))
                                    textOutput("file1A")
                                )
                       ),
-                      tabPanel(title = "text2",
+                      tabPanel(title = "Text 2",
                                tags$br(),
                                textOutput("file2A")
                                ),
                       
-                      tabPanel(title = "text3",
+                      tabPanel(title = "Text 3",
                                tags$br(),
                                textOutput("file3A")
                       )
@@ -147,30 +144,35 @@ print(head(corpusfile))
                          wellPanel(
                            fluidRow(
                              column(4, align="center",
-                                    textInput("text1", "'Easy' words", value = "word1", width = '100px', placeholder = NULL),
-                                    textInput("text2", NULL, value = "word2", width = '100px', placeholder = NULL),
-                                    textInput("text3", NULL, value = "word3", width = '100px', placeholder = NULL),
-                                    textInput("text4", NULL, value = "word4", width = '100px', placeholder = NULL),
-                                    textInput("text5", NULL, value = "word5", width = '100px', placeholder = NULL)
+                                    textInput("word1", "'Easy' words", value = "word1", width = '100px', placeholder = NULL),
+                                    textInput("word2", NULL, value = "word2", width = '100px', placeholder = NULL),
+                                    textInput("word3", NULL, value = "word3", width = '100px', placeholder = NULL),
+                                    textInput("word4", NULL, value = "word4", width = '100px', placeholder = NULL),
+                                    textInput("word", NULL, value = "word5", width = '100px', placeholder = NULL)
                              ),
                              column(4, align="center",
-                                    textInput("text1", "'Mid' words", value = "word1", width = '100px', placeholder = NULL),
-                                    textInput("text2", NULL, value = "word2", width = '100px', placeholder = NULL),
-                                    textInput("text3", NULL, value = "word3", width = '100px', placeholder = NULL),
-                                    textInput("text4", NULL, value = "word4", width = '100px', placeholder = NULL),
-                                    textInput("text5", NULL, value = "word5", width = '100px', placeholder = NULL),
+                                    textInput("word6", "'Mid' words", value = "word1", width = '100px', placeholder = NULL),
+                                    textInput("word7", NULL, value = "word2", width = '100px', placeholder = NULL),
+                                    textInput("word8", NULL, value = "word3", width = '100px', placeholder = NULL),
+                                    textInput("word9", NULL, value = "word4", width = '100px', placeholder = NULL),
+                                    textInput("word10", NULL, value = "word5", width = '100px', placeholder = NULL),
                                     
                                     actionButton(inputId="buildingDone", align="center", label="Submit my list"),
-                                    textOutput("textout")
+                                    
                              ),
                              column(4, align="center",
-                                    textInput("text1", "'Hard' words", value = "word1", width = '100px', placeholder = NULL),
-                                    textInput("text2", NULL, value = "word2", width = '100px', placeholder = NULL),
-                                    textInput("text3", NULL, value = "word3", width = '100px', placeholder = NULL),
-                                    textInput("text4", NULL, value = "word4", width = '100px', placeholder = NULL),
-                                    textInput("text5", NULL, value = "word5", width = '100px', placeholder = NULL)
+                                    textInput("word11", "'Hard' words", value = "word1", width = '100px', placeholder = NULL),
+                                    textInput("word12", NULL, value = "word2", width = '100px', placeholder = NULL),
+                                    textInput("word13", NULL, value = "word3", width = '100px', placeholder = NULL),
+                                    textInput("word14", NULL, value = "word4", width = '100px', placeholder = NULL),
+                                    textInput("word15", NULL, value = "word5", width = '100px', placeholder = NULL)
                              )
-                           )
+                            
+                           ),
+                           tags$br(),
+                           textOutput("text2out"),
+                           textOutput("listValidate")
+                           
                          )
                       )
                 ),
@@ -194,12 +196,12 @@ print(head(corpusfile))
                                    textOutput("file1B")
                                )
                       ),
-                      tabPanel(title = "text2",
+                      tabPanel(title = "Text 2",
                                tags$br(),
                                textOutput("file2B")
                       ),
                       
-                      tabPanel(title = "text3",
+                      tabPanel(title = "Text 3",
                                tags$br(),
                                textOutput("file1C")
                       )
@@ -207,13 +209,14 @@ print(head(corpusfile))
                   )
                   ),
                   
-                  column(4, align="center",
+                  column(2, align="center",
                          wellPanel(
-                           "your LIST"
-                         )
+                           "YOUR LIST:",
+                           textOutput("word1")
+                           )
                   ),
                   
-                  column(4, align="center",
+                  column(2, align="center",
                          wellPanel(
                            selectInput("essayA", "Rating: ESSAY A",
                                        c("Choose one" = "", 1:10)),
@@ -255,15 +258,20 @@ print(head(corpusfile))
   )
 
   server <- function(input, output, session){
-
+    
+    
     ### SIGN IN ###
-
     observeEvent(input$signInDone, {
+     
+      signInInfo <<- data.frame(SignInTimeGMT=Sys.time(), Name=input$signIn1, Age=input$signIn2, Job=input$signIn3)
+
       updateTabItems(session, "sidebar", "building")
       addCssClass(selector = "a[data-value='signIn']", class = "inactiveLink")
     })
 
     ### LIST BUILDING ###
+    
+    output$word1 <- renderText({input$word1})
     
     output$file1A <- renderText(essay1)
     output$file2A <- renderText(essay2)
@@ -273,26 +281,29 @@ print(head(corpusfile))
     output$file2B <- renderText(essay2)
     output$file3B <- renderText(essay3)
     
-    data = (data.frame(words = c("word1", "word2", "word3"), stringsAsFactors = FALSE))
-    
     output$text2out <- renderText({
-      validate(
-        need(input$text1 != '' || input$text2 != '', 'At least one word blank is empty!')
+      wordInputs <- c(input$word1, input$word2, input$word3)
+      
+      listValidate <- validate(
+        need(!("" %in% wordInputs), 'At least one word blank is empty!'),
+        need(all(grepl("word\\d+", wordInputs) == FALSE), "You can't use the default values!")
       )
-      req(input$text1 == "word1" || input$text2 == "word2")
-      "Test cannot be a value"
+      output$listValidate <- renderText('List Validated!')
+      print(listValidate)
     })
     
     observeEvent(input$buildingDone, {
-      if(input$text1!=""&&input$text2!="")
-      {
-        output$textout <- renderText({"BINGO!"})
-        updateTabItems(session, "sidebar", "rating")
-        addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
-      }
-      else
-      {
+      
+      wordInputs <- c(input$word1, input$word2, input$word3)
+      if("" %in% wordInputs){
         showModal(modalDialog(title ="Error", "Please fill all the fields before you click the 'Submit' buttion!"))
+        print(input$buildingDone)
+      } else if (any(grepl("word\\d+", wordInputs) == TRUE)) {
+        showModal(modalDialog(title ="Error", "Please make sure all default values have been changed."))
+        } else {
+          wordList <<- data.frame(input$word1, input$word2, input$word3)
+          updateTabItems(session, "sidebar", "rating")
+          addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
       }
     })
     
@@ -313,6 +324,22 @@ print(head(corpusfile))
     ### VALIDATION ###
     
     observeEvent(input$validationDone, {
+      
+      #submit data into new data row (with <<- you  make sure the variable is updated outside of the scope of the function)
+      sessionData <- cbind(signInInfo, wordList)
+      print(sessionData)
+      
+      if(file.info("../responses/resultData.rds")$size != 0){
+         resultData <- readRDS(file = "../responses/resultData.rds")
+         resultData <- rbind(resultData, sessionData)
+      } else {
+        resultData <- sessionData
+      }
+      
+      saveRDS(resultData, file = "../responses/resultData.rds")
+      print(resultData)
+      write.csv(resultData, "../data.csv")
+      
       updateTabItems(session, "sidebar", "thanks")
       addCssClass(selector = "a[data-value='validation']", class = "inactiveLink")
     })

@@ -212,7 +212,9 @@ print(head(corpusfile))
                   column(2, align="center",
                          wellPanel(
                            "YOUR LIST:",
-                           textOutput("word1")
+                           textOutput("word1"),
+                           textOutput("word2"),
+                           textOutput("word3")
                            )
                   ),
                   
@@ -272,6 +274,9 @@ print(head(corpusfile))
     ### LIST BUILDING ###
     
     output$word1 <- renderText({input$word1})
+    output$word2 <- renderText({input$word2})
+    output$word3 <- renderText({input$word3})
+    
     
     output$file1A <- renderText(essay1)
     output$file2A <- renderText(essay2)
@@ -281,19 +286,21 @@ print(head(corpusfile))
     output$file2B <- renderText(essay2)
     output$file3B <- renderText(essay3)
     
-    output$text2out <- renderText({
+   disable("buildingDone")
+    
+    output$text2out <- renderPrint({
       wordInputs <- c(input$word1, input$word2, input$word3)
       
-      listValidate <- validate(
+      validate(
         need(!("" %in% wordInputs), 'At least one word blank is empty!'),
         need(all(grepl("word\\d+", wordInputs) == FALSE), "You can't use the default values!")
       )
+      enable("buildingDone")
       output$listValidate <- renderText('List Validated!')
-      print(listValidate)
     })
     
     observeEvent(input$buildingDone, {
-      
+   
       wordInputs <- c(input$word1, input$word2, input$word3)
       if("" %in% wordInputs){
         showModal(modalDialog(title ="Error", "Please fill all the fields before you click the 'Submit' buttion!"))

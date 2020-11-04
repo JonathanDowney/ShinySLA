@@ -286,10 +286,11 @@ print(head(corpusfile))
     output$file2B <- renderText(essay2)
     output$file3B <- renderText(essay3)
     
-   disable("buildingDone")
     
     output$text2out <- renderPrint({
       wordInputs <- c(input$word1, input$word2, input$word3)
+      disable("buildingDone")
+      output$listValidate <- renderText('Invalid input!')
       
       validate(
         need(!("" %in% wordInputs), 'At least one word blank is empty!'),
@@ -300,18 +301,10 @@ print(head(corpusfile))
     })
     
     observeEvent(input$buildingDone, {
-   
-      wordInputs <- c(input$word1, input$word2, input$word3)
-      if("" %in% wordInputs){
-        showModal(modalDialog(title ="Error", "Please fill all the fields before you click the 'Submit' buttion!"))
-        print(input$buildingDone)
-      } else if (any(grepl("word\\d+", wordInputs) == TRUE)) {
-        showModal(modalDialog(title ="Error", "Please make sure all default values have been changed."))
-        } else {
           wordList <<- data.frame(input$word1, input$word2, input$word3)
           updateTabItems(session, "sidebar", "rating")
           addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
-      }
+
     })
     
     ### ESSAY RATING ###

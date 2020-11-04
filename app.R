@@ -3,6 +3,8 @@ library(shinyjs)
 library(shinydashboard)
 library(TAM)
 
+ratingList <- NULL
+
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
 setwd(working_directory)
 
@@ -204,7 +206,7 @@ print(head(corpusfile))
                       
                       tabPanel(title = "Text 3",
                                tags$br(),
-                               textOutput("file1C")
+                               textOutput("file3B")
                       )
                     )
                   )
@@ -221,12 +223,14 @@ print(head(corpusfile))
                   
                   column(2, align="center",
                          wellPanel(
-                           selectInput("essayA", "Rating: ESSAY A",
+                           selectInput("rating1", "Rating: ESSAY A",
+                                       c("1 = best, 10 = worst" = "", 1:10)),
+                           selectInput("rating2", "Rating: ESSAY B",
                                        c("Choose one" = "", 1:10)),
-                           selectInput("essayB", "Rating: ESSAY B",
+                           selectInput("rating3", "Rating: ESSAY C",
                                        c("Choose one" = "", 1:10)),
-                           selectInput("essayC", "Rating: ESSAY C",
-                                       c("Choose one" = "", 1:10)),
+                           textOutput("text3out"),
+                           textOutput("ratingsValidate")
                          )
                   )
                 ),
@@ -294,14 +298,23 @@ print(head(corpusfile))
       output$listValidate <- renderText('Invalid input!')
       
       validate(
-        need(!("" %in% wordInputs), 'At least one word blank is empty!'),
-        need(all(grepl("word\\d+", wordInputs) == FALSE), "You can't use the default values!")
+        need(!("" %in% wordInputs), 'At least one word blank is empty.'),
+        need(all(grepl("word\\d+", wordInputs) == FALSE), "You can't use the default values."),
+        need(all(duplicated(wordInputs) == FALSE), "Each word must be unique.")
+        
       )
       enable("buildingDone")
+      tags$br()
       output$listValidate <- renderText('List Validated!')
     })
     
     observeEvent(input$buildingDone, {
+          
+          test <- c(input$word1, input$word2, input$word3)
+          print(test)
+          test2 <- list(input$word1, input$word2, input$word3)
+          print(test2)
+            
           wordList <<- data.frame(input$word1, input$word2, input$word3)
           updateTabItems(session, "sidebar", "rating")
           addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
@@ -310,12 +323,71 @@ print(head(corpusfile))
     
     ### ESSAY RATING ###
     
+    output$text3out <- renderPrint({
+      essayRatings <- c(input$rating1, input$rating2, input$rating3)
+      disable("ratingDone")
+      output$ratingsValidate <- renderText('Invalid ratings!')
+      
+      validate(
+        need(!("" %in% essayRatings), 'At least one rating field is empty.'),
+        need(all(duplicated(essayRatings) == FALSE), "Each rating must have a unique value.")
+      )
+      enable("ratingDone")
+      output$ratingsValidate <- renderText('Ratings Validated!')
+    })
+    
     observeEvent(input$ratingDone, {
+      ratingList <<- data.frame(input$rating1, input$rating2, input$rating3)
       updateTabItems(session, "sidebar", "analysis")
       addCssClass(selector = "a[data-value='rating']", class = "inactiveLink")
+      
+      ## Real analysis happens here because "wordList" is inside the "observeEvent" scope 
+      wordListVector <- as.character(wordList[1,])
+      
+      tokens_analyzed_per_essay <- 100
+      
+      essay_scores <<- matrix(ncol = 0, nrow = length(wordList))
+      essay_scores <<- as.data.frame(essay_scores)
+      
+      for (i in fileslist){
+        
+        #Read in student essays
+        essayfile <- scan(file=i, what="char")
+        
+        #Strip out tags and punctuation
+        essayfile <- gsub('<P>','',essayfile)
+        essayfile <- gsub('</P>','',essayfile)
+        essayfile <- gsub('[[:punct:] ]+','',essayfile)
+        
+        # Now remove entries that are blank (because before they were only tags or stand alone punctuation)
+        essayfile[essayfile != ""]
+        
+        # Include only unique tokens (non-case-sensitive)
+        essayfile <- unique(tolower((essayfile)))
+        
+        # to score essays fairly, use only an essays first X words, where X is the length of the shortest essay
+        essayfile <- head(essayfile, tokens_analyzed_per_essay)
+        
+        #score the essay file according to how many "total_corpus" words are used
+        essay_score <- as.numeric(wordListVector %in% essayfile)
+        essay_scores <- cbind(essay_scores, essay_score)
+        
+      } #End file scanning loop
+      
+      #name columns according to filename and name rows according to "total corpus" list
+      # rownames(essay_scores) <- wordList
+      
+     essay1score <<- essay_scores[,1]  
+
+      
+      
     })
     
     ### ANALYSIS ###
+    
+    
+   
+    # submit button
     
     observeEvent(input$analysisDone, {
       updateTabItems(session, "sidebar", "validation")
@@ -327,7 +399,7 @@ print(head(corpusfile))
     observeEvent(input$validationDone, {
       
       #submit data into new data row (with <<- you  make sure the variable is updated outside of the scope of the function)
-      sessionData <- cbind(signInInfo, wordList)
+      sessionData <- cbind(signInInfo, wordList, ratingList, essay1score)
       print(sessionData)
       
       if(file.info("../responses/resultData.rds")$size != 0){

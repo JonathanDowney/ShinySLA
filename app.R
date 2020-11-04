@@ -21,6 +21,7 @@ essay3 <- (scan(file = fileslist[3], what="char"))
 print(head(corpusfile))
 
 {
+  
   ui <- dashboardPage(
     dashboardHeader(
       title = "SLAtools.net",

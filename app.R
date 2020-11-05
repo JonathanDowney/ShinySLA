@@ -29,7 +29,7 @@ print(head(corpusfile))
       title = "SLAtools.net",
       titleWidth = 220
     ),
-
+    
     dashboardSidebar(
       useShinyjs(),
       width = 220,
@@ -37,25 +37,25 @@ print(head(corpusfile))
         id = "sidebar",
         
         #Menu Item: Instructions
-
+        
         menuItem("Instructions", tabName = "instructions", icon = icon("bullhorn"), badgeColor = "red"),
         
         #Menu Item: Step 1
-                                                                               #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+        #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
         menuItem("Step 1: Sign-in", tabName = "signIn", icon = icon("address-card")),
-
+        
         #Menu Item: Step 2
         conditionalPanel(
           condition = "input.signInDone == 1",
           sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
             menuItem("Step 2: Build vocab list", tabName = "building", icon = icon("clipboard-list"))
           )),
-
+        
         #Menu Item: Step 3
         conditionalPanel(
           condition = "input.buildingDone == 1 && output.listValidate == 'List Validated!'",
           sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-              menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
+            menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
           )),
         
         #Menu Item: Step 4
@@ -64,23 +64,23 @@ print(head(corpusfile))
           sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
             menuItem("Step 4: Computer analysis", tabName = "analysis", icon = icon("chart-line"))
           )),
-
+        
         #Menu Item: Step 5
         conditionalPanel(
           condition = "input.analysisDone == 1",
           sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
             menuItem("Step 5: Human validation", tabName = "validation", icon = icon("microscope"))
-        )),
-      
-      #Menu Item: Thanks!
-      conditionalPanel(
-        condition = "input.validationDone == 1",
-        sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-          menuItem("Thanks!!", tabName = "thanks", icon = icon("child"))
-      ))
-    )
+          )),
+        
+        #Menu Item: Thanks!
+        conditionalPanel(
+          condition = "input.validationDone == 1",
+          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+            menuItem("Thanks!!", tabName = "thanks", icon = icon("child"))
+          ))
+      )
     ),
-
+    
     dashboardBody(
       tags$head(
         tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
@@ -100,14 +100,14 @@ print(head(corpusfile))
                 h2("Sign in!"),
                 fluidRow(
                   column(4, align="center",
-                    wellPanel(
-                      textInput("signIn1", "Identifer", value = "Identifier", width = '100px', placeholder = NULL),
-                      textInput("signIn2", "Age", value = "Age", width = '100px', placeholder = NULL),
-                      textInput("signIn3", "Occupation", value = "Occupation", width = '100px', placeholder = NULL)
-                    )
+                         wellPanel(
+                           textInput("signIn1", "Identifer", value = "Identifier", width = '100px', placeholder = NULL),
+                           textInput("signIn2", "Age", value = "Age", width = '100px', placeholder = NULL),
+                           textInput("signIn3", "Occupation", value = "Occupation", width = '100px', placeholder = NULL)
+                         )
                   ),
-                tags$br(),
-                actionButton(inputId="signInDone", align="center", label="Done"),
+                  tags$br(),
+                  actionButton(inputId="signInDone", align="center", label="Done"),
                 )
         ),
         
@@ -132,7 +132,7 @@ print(head(corpusfile))
                       tabPanel(title = "Text 2",
                                tags$br(),
                                textOutput("file2A")
-                               ),
+                      ),
                       
                       tabPanel(title = "Text 3",
                                tags$br(),
@@ -141,7 +141,7 @@ print(head(corpusfile))
                     )
                   )
                   ),
-
+                  
                   # Word list
                   column(4,
                          wellPanel(
@@ -170,21 +170,21 @@ print(head(corpusfile))
                                     textInput("word14", NULL, value = "word4", width = '100px', placeholder = NULL),
                                     textInput("word15", NULL, value = "word5", width = '100px', placeholder = NULL)
                              )
-                            
+                             
                            ),
                            tags$br(),
                            textOutput("text2out"),
                            textOutput("listValidate")
                            
                          )
-                      )
+                  )
                 ),
                 fluidRow(
                   tags$br(),
                   tags$p("hello", id = "test1"),
                 ),
         ),
-
+        
         ### ESSAY RATING ###  
         
         tabItem(tabName = "rating",
@@ -218,7 +218,7 @@ print(head(corpusfile))
                            textOutput("word1"),
                            textOutput("word2"),
                            textOutput("word3")
-                           )
+                         )
                   ),
                   
                   column(2, align="center",
@@ -238,44 +238,45 @@ print(head(corpusfile))
                 
         ),
         
-         ### ANALYSIS ###  
+        ### ANALYSIS ###  
         
         tabItem(tabName = "analysis",
                 h2("Analysis"),
                 p("Please wait until analysis is complete. This could take a couple minutes if the server is busy."),
                 actionButton(inputId="analysisDone", align="center", label="Done"),
-         ),
+        ),
         
         ### VALIDATION ###  
         
         tabItem(tabName = "validation",
-              h2("Validation"),
-              actionButton(inputId="validationDone", align="center", label="Done"),
-              
+                h2("Validation"),
+                actionButton(inputId="validationDone", align="center", label="Done"),
+                
         ),
         
         ### THANKS ###  
         
         tabItem(tabName = "thanks",
                 h2("THANKS!")
-
+                
         )
+      )
     )
   )
-  )
-
+  
   server <- function(input, output, session){
     
     
     ### SIGN IN ###
     observeEvent(input$signInDone, {
-     
-      signInInfo <<- data.frame(SignInTimeGMT=Sys.time(), Name=input$signIn1, Age=input$signIn2, Job=input$signIn3)
-
+      SignInTimeGMT=as.character(Sys.time())
+      signInInfo <<- c(SignInTimeGMT, input$signIn1,input$signIn2, input$signIn3)
+      print(signInInfo)
+      
       updateTabItems(session, "sidebar", "building")
       addCssClass(selector = "a[data-value='signIn']", class = "inactiveLink")
     })
-
+    
     ### LIST BUILDING ###
     
     output$word1 <- renderText({input$word1})
@@ -294,45 +295,43 @@ print(head(corpusfile))
     
     output$text2out <- renderPrint({
       wordInputs <- c(input$word1, input$word2, input$word3)
-      disable("buildingDone")
-      output$listValidate <- renderText('Invalid input!')
-      
-      validate(
-        need(!("" %in% wordInputs), 'At least one word blank is empty.'),
-        need(all(grepl("word\\d+", wordInputs) == FALSE), "You can't use the default values."),
-        need(all(duplicated(wordInputs) == FALSE), "Each word must be unique.")
-        
-      )
-      enable("buildingDone")
+      # disable("buildingDone")
+      # output$listValidate <- renderText('Invalid input!')
+      # 
+      # validate(
+      #   need(!("" %in% wordInputs), 'At least one word blank is empty.'),
+      #   need(all(grepl("word\\d+", wordInputs) == FALSE), "You can't use the default values."),
+      #   need(all(duplicated(wordInputs) == FALSE), "Each word must be unique.")
+      #   
+      # )
+      # enable("buildingDone")
       tags$br()
       output$listValidate <- renderText('List Validated!')
     })
     
     observeEvent(input$buildingDone, {
-          
-          test <- c(input$word1, input$word2, input$word3)
-          print(test)
-          test2 <- list(input$word1, input$word2, input$word3)
-          print(test2)
-            
-          wordList <<- data.frame(input$word1, input$word2, input$word3)
-          updateTabItems(session, "sidebar", "rating")
-          addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
-
+      
+      test <- c(input$word1, input$word2, input$word3)
+      print(test)
+      
+      wordList <<- data.frame(input$word1, input$word2, input$word3)
+      updateTabItems(session, "sidebar", "rating")
+      addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
+      
     })
     
     ### ESSAY RATING ###
     
     output$text3out <- renderPrint({
       essayRatings <- c(input$rating1, input$rating2, input$rating3)
-      disable("ratingDone")
-      output$ratingsValidate <- renderText('Invalid ratings!')
-      
-      validate(
-        need(!("" %in% essayRatings), 'At least one rating field is empty.'),
-        need(all(duplicated(essayRatings) == FALSE), "Each rating must have a unique value.")
-      )
-      enable("ratingDone")
+      # disable("ratingDone")
+      # output$ratingsValidate <- renderText('Invalid ratings!')
+      # 
+      # validate(
+      #   need(!("" %in% essayRatings), 'At least one rating field is empty.'),
+      #   need(all(duplicated(essayRatings) == FALSE), "Each rating must have a unique value.")
+      # )
+      # enable("ratingDone")
       output$ratingsValidate <- renderText('Ratings Validated!')
     })
     
@@ -342,8 +341,7 @@ print(head(corpusfile))
       addCssClass(selector = "a[data-value='rating']", class = "inactiveLink")
       
       ## Real analysis happens here because "wordList" is inside the "observeEvent" scope 
-      wordListVector <- as.character(wordList[1,])
-      
+
       tokens_analyzed_per_essay <- 100
       
       essay_scores <<- matrix(ncol = 0, nrow = length(wordList))
@@ -369,16 +367,24 @@ print(head(corpusfile))
         essayfile <- head(essayfile, tokens_analyzed_per_essay)
         
         #score the essay file according to how many "total_corpus" words are used
-        essay_score <- as.numeric(wordListVector %in% essayfile)
-        essay_scores <- cbind(essay_scores, essay_score)
+        essay_score <- as.numeric(wordList %in% essayfile)
+        essay_scores <<- cbind(essay_scores, essay_score)
         
       } #End file scanning loop
       
       #name columns according to filename and name rows according to "total corpus" list
       # rownames(essay_scores) <- wordList
       
-     essay1score <<- essay_scores[,1]  
+      essay1score <<- essay_score
+      
+      # essay1score <<- as.numeric(essay_score)
+      print(essay1score)
 
+
+      
+  
+     
+      
       
       
     })
@@ -386,7 +392,7 @@ print(head(corpusfile))
     ### ANALYSIS ###
     
     
-   
+    
     # submit button
     
     observeEvent(input$analysisDone, {
@@ -399,25 +405,34 @@ print(head(corpusfile))
     observeEvent(input$validationDone, {
       
       #submit data into new data row (with <<- you  make sure the variable is updated outside of the scope of the function)
-      sessionData <- cbind(signInInfo, wordList, ratingList, essay1score)
+      sessionData <- list(signin=signInInfo, words=wordList, ratings=ratingList, essay1=essay1score)
       print(sessionData)
       
       if(file.info("../responses/resultData.rds")$size != 0){
-         resultData <- readRDS(file = "../responses/resultData.rds")
-         resultData <- rbind(resultData, sessionData)
+        resultData <- readRDS(file = "../responses/resultData.rds")
+        resultData <- rbind(resultData, sessionData)
       } else {
         resultData <- sessionData
       }
       
       saveRDS(resultData, file = "../responses/resultData.rds")
+      print("Session Data:")
+      print(sessionData)
+      
+      resultData <- as.data.frame(resultData)
+      rownames(resultData) <- NULL
+      colnames(resultData) <- c("ID", "Words", "Ratings", "Score" )
+      
+      print("Result Data:")      
       print(resultData)
-      write.csv(resultData, "../data.csv")
+      #print(resultData$ID)
+      #write.csv(resultData, "../data.csv")
       
       updateTabItems(session, "sidebar", "thanks")
       addCssClass(selector = "a[data-value='validation']", class = "inactiveLink")
     })
   }
-
+  
   shinyApp(ui, server)
 }
 

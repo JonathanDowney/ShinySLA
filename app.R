@@ -3,8 +3,6 @@ library(shinyjs)
 library(shinydashboard)
 library(TAM)
 
-ratingList <- NULL
-
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
 setwd(working_directory)
 
@@ -83,7 +81,9 @@ print(head(corpusfile))
     
     dashboardBody(
       tags$head(
-        tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
+      tags$head(
+        tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
+        tags$style("#container * {display: inline;}")),
       ),
       tabItems(
         
@@ -242,6 +242,21 @@ print(head(corpusfile))
         
         tabItem(tabName = "analysis",
                 h2("Analysis"),
+                column(4, align="center",
+                       wellPanel(
+                         "YOUR LIST:",
+                         div(id="container",'Word 1:', textOutput('word1Analysis'), "       Difficulty: ", textOutput("diff1")),
+                         tags$br(),
+                         div(id="container",'Word 2:', textOutput('word2Analysis'), "       Difficulty: ", textOutput("diff2")),
+                         tags$br(),
+                         div(id="container",'Word 3:', textOutput('word3Analysis'), "       Difficulty: ", textOutput("diff3")),
+                       )
+                ), 
+                column(2, align="center",
+                          wellPanel(
+                            "Item difficulties:",
+                          )
+                ),
                 p("Please wait until analysis is complete. This could take a couple minutes if the server is busy."),
                 actionButton(inputId="analysisDone", align="center", label="Done"),
         ),
@@ -342,8 +357,6 @@ print(head(corpusfile))
       
       ## Real analysis happens here because "wordList" is inside the "observeEvent" scope 
 
-      tokens_analyzed_per_essay <- 100
-      
       essay_scores <<- matrix(ncol = 0, nrow = length(wordList))
       essay_scores <<- as.data.frame(essay_scores)
       
@@ -363,9 +376,6 @@ print(head(corpusfile))
         # Include only unique tokens (non-case-sensitive)
         essayfile <- unique(tolower((essayfile)))
         
-        # to score essays fairly, use only an essays first X words, where X is the length of the shortest essay
-        essayfile <- head(essayfile, tokens_analyzed_per_essay)
-        
         #score the essay file according to how many "total_corpus" words are used
         essay_score <- as.numeric(wordList %in% essayfile)
         essay_scores <<- cbind(essay_scores, essay_score)
@@ -375,23 +385,27 @@ print(head(corpusfile))
       #name columns according to filename and name rows according to "total corpus" list
       # rownames(essay_scores) <- wordList
       
-      essay1score <<- essay_score
       
-      # essay1score <<- as.numeric(essay_score)
-      print(essay1score)
-
-
+      essay_scores_transposed <- data.frame(t(essay_scores))
+      testTAM <- tam(essay_scores_transposed)
       
-  
-     
+      print(head(essay_scores))
       
+      diff <- testTAM$xsi$xsi
+      print(diff)
+      output$diff1 <- renderPrint(diff[1])
+      output$diff2 <- renderPrint(diff[2])
+      output$diff3 <- renderPrint(diff[3])
       
-      
+      output$listValidate <- renderText('List Validated!')
+ 
     })
     
     ### ANALYSIS ###
     
-    
+    output$word1Analysis <- renderText({input$word1})
+    output$word2Analysis <- renderText({input$word2})
+    output$word3Analysis <- renderText({input$word3})
     
     # submit button
     
@@ -405,7 +419,7 @@ print(head(corpusfile))
     observeEvent(input$validationDone, {
       
       #submit data into new data row (with <<- you  make sure the variable is updated outside of the scope of the function)
-      sessionData <- list(signin=signInInfo, words=wordList, ratings=ratingList, essay1=essay1score)
+      sessionData <- list(signin=signInInfo, words=wordList, ratings=ratingList, scores=essay_scores)
       print(sessionData)
       
       if(file.info("../responses/resultData.rds")$size != 0){
@@ -419,7 +433,6 @@ print(head(corpusfile))
       print("Session Data:")
       print(sessionData)
       
-      resultData <- as.data.frame(resultData)
       rownames(resultData) <- NULL
       colnames(resultData) <- c("ID", "Words", "Ratings", "Score" )
       

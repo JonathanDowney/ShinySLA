@@ -164,11 +164,7 @@ print(head(corpusfile))
                                     
                              ),
                              column(4, align="center",
-                                    textInput("word11", "'Hard' words", value = "word1", width = '100px', placeholder = NULL),
-                                    textInput("word12", NULL, value = "word2", width = '100px', placeholder = NULL),
-                                    textInput("word13", NULL, value = "word3", width = '100px', placeholder = NULL),
-                                    textInput("word14", NULL, value = "word4", width = '100px', placeholder = NULL),
-                                    textInput("word15", NULL, value = "word5", width = '100px', placeholder = NULL)
+                                    uiOutput("hardWords"),
                              )
                              
                            ),
@@ -254,7 +250,10 @@ print(head(corpusfile))
                 ), 
                 column(2, align="center",
                           wellPanel(
-                            "Item difficulties:",
+                            "Rank:",
+                            textOutput('rankDiff1'),
+                            textOutput('rankDiff2'),
+                            textOutput('rankDiff3')
                           )
                 ),
                 p("Please wait until analysis is complete. This could take a couple minutes if the server is busy."),
@@ -297,6 +296,16 @@ print(head(corpusfile))
     output$word1 <- renderText({input$word1})
     output$word2 <- renderText({input$word2})
     output$word3 <- renderText({input$word3})
+    
+    output$hardWords <- renderUI({
+      tagList(
+        textInput("word11", "'Hard' Words", width = '100px', placeholder = NULL),
+        textInput("word12", "", width = '100px', placeholder = NULL),
+        textInput("word13", "", width = '100px', placeholder = NULL),
+        textInput("word14", "", width = '100px', placeholder = NULL),
+        textInput("word15", "", width = '100px', placeholder = NULL)
+      )
+    })
     
     
     output$file1A <- renderText(essay1)
@@ -393,9 +402,14 @@ print(head(corpusfile))
       
       diff <- testTAM$xsi$xsi
       print(diff)
-      output$diff1 <- renderPrint(diff[1])
-      output$diff2 <- renderPrint(diff[2])
-      output$diff3 <- renderPrint(diff[3])
+      rankDiff <- rank(c(diff[1], diff[2], diff[3]))
+      output$diff1 <- renderPrint(cat(diff[1])) #cat() to remove row number from output
+      output$diff2 <- renderPrint(cat(diff[2]))
+      output$diff3 <- renderPrint(cat(diff[3]))
+      output$rankDiff1 <- renderPrint(cat(rankDiff[1]))
+      output$rankDiff2 <- renderPrint(cat(rankDiff[2]))
+      output$rankDiff3 <- renderPrint(cat(rankDiff[3]))
+      
       
       output$listValidate <- renderText('List Validated!')
  

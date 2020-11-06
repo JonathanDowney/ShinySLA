@@ -166,12 +166,10 @@ print(head(corpusfile))
                              column(4, align="center",
                                     uiOutput("hardWords"),
                              )
-                             
                            ),
                            tags$br(),
                            textOutput("text2out"),
                            textOutput("listValidate")
-                           
                          )
                   )
                 ),
@@ -238,24 +236,71 @@ print(head(corpusfile))
         
         tabItem(tabName = "analysis",
                 h2("Analysis"),
-                column(4, align="center",
+                column(6, align="center",
                        wellPanel(
-                         "YOUR LIST:",
-                         div(id="container",'Word 1:', textOutput('word1Analysis'), "       Difficulty: ", textOutput("diff1")),
-                         tags$br(),
-                         div(id="container",'Word 2:', textOutput('word2Analysis'), "       Difficulty: ", textOutput("diff2")),
-                         tags$br(),
-                         div(id="container",'Word 3:', textOutput('word3Analysis'), "       Difficulty: ", textOutput("diff3")),
-                       )
-                ), 
-                column(2, align="center",
-                          wellPanel(
-                            "Rank:",
-                            textOutput('rankDiff1'),
-                            textOutput('rankDiff2'),
-                            textOutput('rankDiff3')
-                          )
+                         fluidRow(
+                           column(4, align="center",
+                                  "YOUR LIST:",
+                                  div(id="container",'Word 1:', textOutput('word1Analysis')),
+                                  tags$br(),
+                                  div(id="container",'Word 2:', textOutput('word2Analysis')),
+                                  tags$br(),
+                                  div(id="container",'Word 3:', textOutput('word3Analysis'))
+                           ),
+                           column(4, align="center",
+                                  "Your Rank:",
+                                  tags$br(),
+                                  div(id="container","1"),
+                                  tags$br(),
+                                  div(id="container","2"),
+                                  tags$br(),
+                                  div(id="container","3"),
+                           ),
+                           column(4, align="center",
+                                  "Model Rank:",
+                                  div(id="container", textOutput('rankDiff1'), "(", textOutput("diff1"), ")"),
+                                  tags$br(),
+                                  div(id="container", textOutput('rankDiff2'), "(", textOutput("diff2"), ")"),
+                                  tags$br(),
+                                  div(id="container", textOutput('rankDiff3'), "(", textOutput("diff3"), ")")
+                                  
+                           )
+                         )
+                        )
                 ),
+                column(6, align="center",
+                       wellPanel(
+                         fluidRow(
+                           column(4, align="center",
+                                  "Essays:",
+                                  div(id="container",'Essay 1'),
+                                  tags$br(),
+                                  div(id="container",'Essay 2:'),
+                                  tags$br(),
+                                  div(id="container",'Essay 3:')
+                           ),
+                           column(4, align="center",
+                                  "Your Rank:",
+                                  tags$br(),
+                                  div(id="container","1"),
+                                  tags$br(),
+                                  div(id="container","2"),
+                                  tags$br(),
+                                  div(id="container","3"),
+                           ),
+                           column(4, align="center",
+                                  "Model Rank:",
+                                  div(id="container", textOutput('rankAbil1'), "(", textOutput("abil1"), ")"),
+                                  tags$br(),
+                                  div(id="container", textOutput('rankAbil2'), "(", textOutput("abil2"), ")"),
+                                  tags$br(),
+                                  div(id="container", textOutput('rankAbil3'), "(", textOutput("abil3"), ")")
+
+                           )
+                         )
+                       )
+                ),
+           
                 p("Please wait until analysis is complete. This could take a couple minutes if the server is busy."),
                 actionButton(inputId="analysisDone", align="center", label="Done"),
         ),
@@ -401,8 +446,14 @@ print(head(corpusfile))
       print(head(essay_scores))
       
       diff <- testTAM$xsi$xsi
+      abilEST <<- tam.wle(testTAM)
+      abil <- abilEST$theta
       print(diff)
+      
+      
       rankDiff <- rank(c(diff[1], diff[2], diff[3]))
+      rankAbil <- rank(c(abil[1], abil[2], abil[3]))
+      
       output$diff1 <- renderPrint(cat(diff[1])) #cat() to remove row number from output
       output$diff2 <- renderPrint(cat(diff[2]))
       output$diff3 <- renderPrint(cat(diff[3]))
@@ -410,6 +461,12 @@ print(head(corpusfile))
       output$rankDiff2 <- renderPrint(cat(rankDiff[2]))
       output$rankDiff3 <- renderPrint(cat(rankDiff[3]))
       
+      output$abil1 <- renderPrint(cat(abil[1])) #cat() to remove row number from output
+      output$abil2 <- renderPrint(cat(abil[2]))
+      output$abil3 <- renderPrint(cat(abil[3]))
+      output$rankAbil1 <- renderPrint(cat(rankAbil[1]))
+      output$rankAbil2 <- renderPrint(cat(rankAbil[2]))
+      output$rankAbil3 <- renderPrint(cat(rankAbil[3]))
       
       output$listValidate <- renderText('List Validated!')
  

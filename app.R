@@ -8,6 +8,9 @@ setwd(working_directory)
 
 fileslist <- list.files(path = working_directory)
 
+wordInputs <- c(1:4)
+
+
 for (i in fileslist){
   #scan files in from "file list"
   corpusfile <- scan(file = i, what="char")
@@ -146,26 +149,27 @@ print(head(corpusfile))
                   column(4,
                          wellPanel(
                            fluidRow(
+                             # column(4, align="center",
+                             #        textInput("word1", "'Easy' words", value = "word1", width = '100px', placeholder = NULL),
+                             #        textInput("word2", NULL, value = "word2", width = '100px', placeholder = NULL),
+                             #        textInput("word3", NULL, value = "word3", width = '100px', placeholder = NULL),
+                             #        textInput("word4", NULL, value = "word4", width = '100px', placeholder = NULL),
+                             #        textInput("word5", NULL, value = "word5", width = '100px', placeholder = NULL)
+                             # ),
                              column(4, align="center",
-                                    textInput("word1", "'Easy' words", value = "word1", width = '100px', placeholder = NULL),
-                                    textInput("word2", NULL, value = "word2", width = '100px', placeholder = NULL),
-                                    textInput("word3", NULL, value = "word3", width = '100px', placeholder = NULL),
-                                    textInput("word4", NULL, value = "word4", width = '100px', placeholder = NULL),
-                                    textInput("word", NULL, value = "word5", width = '100px', placeholder = NULL)
-                             ),
-                             column(4, align="center",
-                                    textInput("word6", "'Mid' words", value = "word1", width = '100px', placeholder = NULL),
-                                    textInput("word7", NULL, value = "word2", width = '100px', placeholder = NULL),
-                                    textInput("word8", NULL, value = "word3", width = '100px', placeholder = NULL),
-                                    textInput("word9", NULL, value = "word4", width = '100px', placeholder = NULL),
-                                    textInput("word10", NULL, value = "word5", width = '100px', placeholder = NULL),
+                                    
+                                    uiOutput("wordInputs"),
+                                    
+                                    # 
+                                    # textInput("word9", NULL, value = "word4", width = '100px', placeholder = NULL),
+                                    # textInput("word10", NULL, value = "word5", width = '100px', placeholder = NULL),
                                     
                                     actionButton(inputId="buildingDone", align="center", label="Submit my list"),
                                     
                              ),
-                             column(4, align="center",
-                                    uiOutput("hardWords"),
-                             )
+                             # column(4, align="center",
+                             #        uiOutput("hardWords"),
+                             # )
                            ),
                            tags$br(),
                            textOutput("text2out"),
@@ -209,9 +213,9 @@ print(head(corpusfile))
                   column(2, align="center",
                          wellPanel(
                            "YOUR LIST:",
-                           textOutput("word1"),
-                           textOutput("word2"),
-                           textOutput("word3")
+                            tags$ol(
+                             uiOutput("yourList")
+                            )
                          )
                   ),
                   
@@ -224,7 +228,7 @@ print(head(corpusfile))
                            selectInput("rating3", "Rating: ESSAY C",
                                        c("Choose one" = "", 1:10)),
                            textOutput("text3out"),
-                           textOutput("ratingsValidate")
+                           textOutput("ratingsValidate"),
                          )
                   )
                 ),
@@ -337,20 +341,23 @@ print(head(corpusfile))
     })
     
     ### LIST BUILDING ###
+
+    #dynamically generate word input fields
+    v <- list()
+    for (i in 1:length(wordInputs)){
+      v[[i]] <- textInput(paste0("word",i), label = NULL, width = '100px', placeholder = NULL)
+    }
+    output$wordInputs <- renderUI(v)
     
-    output$word1 <- renderText({input$word1})
-    output$word2 <- renderText({input$word2})
-    output$word3 <- renderText({input$word3})
-    
-    output$hardWords <- renderUI({
-      tagList(
-        textInput("word11", "'Hard' Words", width = '100px', placeholder = NULL),
-        textInput("word12", "", width = '100px', placeholder = NULL),
-        textInput("word13", "", width = '100px', placeholder = NULL),
-        textInput("word14", "", width = '100px', placeholder = NULL),
-        textInput("word15", "", width = '100px', placeholder = NULL)
-      )
-    })
+    # output$hardWords <- renderUI({
+    #   tagList(
+    #     textInput("word11", "'Hard' Words", width = '100px', placeholder = NULL),
+    #     textInput("word12", "", width = '100px', placeholder = NULL),
+    #     textInput("word13", "", width = '100px', placeholder = NULL),
+    #     textInput("word14", "", width = '100px', placeholder = NULL),
+    #     textInput("word15", "", width = '100px', placeholder = NULL)
+    #   )
+    # })
     
     
     output$file1A <- renderText(essay1)
@@ -363,7 +370,6 @@ print(head(corpusfile))
     
     
     output$text2out <- renderPrint({
-      wordInputs <- c(input$word1, input$word2, input$word3)
       # disable("buildingDone")
       # output$listValidate <- renderText('Invalid input!')
       # 
@@ -379,17 +385,63 @@ print(head(corpusfile))
     })
     
     observeEvent(input$buildingDone, {
+      vals <- as.numeric(gsub("word","", names(input)))
+      wOrder<- names(input)[order(vals)]
+      print(paste0("wOrder: ",wOrder))
       
-      test <- c(input$word1, input$word2, input$word3)
-      print(test)
+      testwordorder <- lapply(grep(pattern = "word+[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
+      print(testwordorder)
+      print(data.frame(input$word1, input$word2, input$word3))
       
-      wordList <<- data.frame(input$word1, input$word2, input$word3)
+      
+      
+      # w <- list()
+      # for (i in 1:length(wordInputs)){
+      #   w[[i]] <- textInput(paste0("word",i), label = NULL, width = '100px', placeholder = NULL)
+      # }
+      # output$wordInputs <- renderUI(v)
+      
+            # wordList <<- data.frame(input$word1, input$word2, input$word3)
+      wordList <<- as.data.frame(testwordorder)
+      
+
+      # Dynamically generate "wordList"
+      
+      output$yourList <- renderUI({
+        lapply(grep(pattern = "word+[[:digit:]]+", x = wOrder, value = TRUE), function(x) tags$li(input[[x]]))
+      })
+
       updateTabItems(session, "sidebar", "rating")
       addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
       
     })
     
     ### ESSAY RATING ###
+    
+    output$word1 <- renderText({input$word1})
+    output$word2 <- renderText({input$word2})
+    output$word3 <- renderText({input$word3})
+
+    output$test <- renderUI(sapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]]))
+    
+    # Dynamically generate "Your List"
+    # 
+    # w <<- list()
+    # for (i in 1:length(wordInputs)){
+    #   wordId <-  paste0("word", i)
+    #   w[[i]] <- renderText({input[[wordId]]})
+    #   print(w)
+    # }
+    # output$yourList <- renderUI(w)
+    
+    # Dynamically populate "Your List"
+    
+    # lapply(1:length(wordInputs), function(i) {
+    #   wordId <-  paste0("word", i)
+    #   output[[wordId]] <- renderText({input[[wordId]]})
+    # })
+
+    
     
     output$text3out <- renderPrint({
       essayRatings <- c(input$rating1, input$rating2, input$rating3)

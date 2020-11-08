@@ -8,8 +8,7 @@ setwd(working_directory)
 
 fileslist <- list.files(path = working_directory)
 
-wordInputs <- c(1:4)
-
+wordInputLength <- c(1:4)
 
 for (i in fileslist){
   #scan files in from "file list"
@@ -54,7 +53,7 @@ print(head(corpusfile))
         
         #Menu Item: Step 3
         conditionalPanel(
-          condition = "input.buildingDone == 1 && output.listValidate == 'List Validated!'",
+          condition = "input.buildingDone == 1 && output.validInput == 'List Validated!'",
           sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
             menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
           )),
@@ -147,34 +146,18 @@ print(head(corpusfile))
                   
                   # Word list
                   column(4,
-                         wellPanel(
-                           fluidRow(
-                             # column(4, align="center",
-                             #        textInput("word1", "'Easy' words", value = "word1", width = '100px', placeholder = NULL),
-                             #        textInput("word2", NULL, value = "word2", width = '100px', placeholder = NULL),
-                             #        textInput("word3", NULL, value = "word3", width = '100px', placeholder = NULL),
-                             #        textInput("word4", NULL, value = "word4", width = '100px', placeholder = NULL),
-                             #        textInput("word5", NULL, value = "word5", width = '100px', placeholder = NULL)
-                             # ),
-                             column(4, align="center",
-                                    
-                                    uiOutput("wordInputs"),
-                                    
-                                    # 
-                                    # textInput("word9", NULL, value = "word4", width = '100px', placeholder = NULL),
-                                    # textInput("word10", NULL, value = "word5", width = '100px', placeholder = NULL),
-                                    
-                                    actionButton(inputId="buildingDone", align="center", label="Submit my list"),
-                                    
-                             ),
-                             # column(4, align="center",
-                             #        uiOutput("hardWords"),
-                             # )
-                           ),
-                           tags$br(),
-                           textOutput("text2out"),
-                           textOutput("listValidate")
-                         )
+                     wellPanel(
+                       fluidRow(
+                         column(4, align="center",
+                                uiOutput("wordInputBlanks"),
+                                actionButton(inputId="buildingDone", align="center", label="Submit my list"),
+                         ),
+                       ),
+                       tags$br(),
+                       textOutput("listValidate"),
+                       tags$br(),
+                       textOutput("validInput")
+                     )
                   )
                 ),
                 fluidRow(
@@ -343,11 +326,11 @@ print(head(corpusfile))
     ### LIST BUILDING ###
 
     #dynamically generate word input fields
-    v <- list()
-    for (i in 1:length(wordInputs)){
-      v[[i]] <- textInput(paste0("word",i), label = NULL, width = '100px', placeholder = NULL)
+    v <<- list()
+    for (i in 1:length(wordInputLength)){
+      v[[i]] <- textInput(paste0("word",i), label = NULL, width = '100px', placeholder = paste0("word",i))
     }
-    output$wordInputs <- renderUI(v)
+    output$wordInputBlanks <- renderUI(v)
     
     # output$hardWords <- renderUI({
     #   tagList(
@@ -369,41 +352,30 @@ print(head(corpusfile))
     output$file3B <- renderText(essay3)
     
     
-    output$text2out <- renderPrint({
-      # disable("buildingDone")
-      # output$listValidate <- renderText('Invalid input!')
-      # 
-      # validate(
-      #   need(!("" %in% wordInputs), 'At least one word blank is empty.'),
-      #   need(all(grepl("word\\d+", wordInputs) == FALSE), "You can't use the default values."),
-      #   need(all(duplicated(wordInputs) == FALSE), "Each word must be unique.")
-      #   
-      # )
-      # enable("buildingDone")
+    output$listValidate <- renderPrint({
+      
+
+      wordList <<- lapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
+
+      disable("buildingDone")
+      output$validInput <- renderText('Invalid input!')
+
+      validate(
+        need(!("test" %in% wordList), 'Cant use test'),
+        need(!(any(wordList == "")), 'At least one word blank is empty.'),
+        need(all(grepl("word\\d+", wordList) == FALSE), "You can't use the default values."),
+        need(all(duplicated(wordList) == FALSE), "Each word must be unique.")
+      )
+      enable("buildingDone")
       tags$br()
-      output$listValidate <- renderText('List Validated!')
+      output$validInput <- renderText('List Validated!')
     })
     
     observeEvent(input$buildingDone, {
       vals <- as.numeric(gsub("word","", names(input)))
       wOrder<- names(input)[order(vals)]
-      print(paste0("wOrder: ",wOrder))
-      
-      testwordorder <- lapply(grep(pattern = "word+[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
-      print(testwordorder)
-      print(data.frame(input$word1, input$word2, input$word3))
-      
-      
-      
-      # w <- list()
-      # for (i in 1:length(wordInputs)){
-      #   w[[i]] <- textInput(paste0("word",i), label = NULL, width = '100px', placeholder = NULL)
-      # }
-      # output$wordInputs <- renderUI(v)
-      
-            # wordList <<- data.frame(input$word1, input$word2, input$word3)
-      wordList <<- as.data.frame(testwordorder)
-      
+      wordList <- lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
+      wordList <<- as.data.frame(wordList)
 
       # Dynamically generate "wordList"
       

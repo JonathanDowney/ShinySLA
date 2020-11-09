@@ -3,12 +3,18 @@ library(shinyjs)
 library(shinydashboard)
 library(TAM)
 
+wordInputLength <- c(1:4)
+
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
 setwd(working_directory)
 
 fileslist <- list.files(path = working_directory)
 
-wordInputLength <- c(1:4)
+if(file.info("../responses/resultData.rds")$size != 0){
+  dataCollector <- as.list(readRDS(file = "../responses/resultData.rds"))
+} else {
+  dataCollector <<- list()
+}
 
 for (i in fileslist){
   #scan files in from "file list"
@@ -20,8 +26,6 @@ essay2 <- (scan(file = fileslist[2], what="char"))
 essay3 <- (scan(file = fileslist[3], what="char"))
 
 # sample1 <- gsub("[[:punct:]]", "", unique(tolower(essay1)))
-print(head(corpusfile))
-
 {
   
   ui <- dashboardPage(
@@ -314,11 +318,10 @@ print(head(corpusfile))
     
     
     ### SIGN IN ###
+    
     observeEvent(input$signInDone, {
       SignInTimeGMT=as.character(Sys.time())
       signInInfo <<- c(SignInTimeGMT, input$signIn1,input$signIn2, input$signIn3)
-      print(signInInfo)
-      
       updateTabItems(session, "sidebar", "building")
       addCssClass(selector = "a[data-value='signIn']", class = "inactiveLink")
     })
@@ -332,17 +335,6 @@ print(head(corpusfile))
     }
     output$wordInputBlanks <- renderUI(v)
     
-    # output$hardWords <- renderUI({
-    #   tagList(
-    #     textInput("word11", "'Hard' Words", width = '100px', placeholder = NULL),
-    #     textInput("word12", "", width = '100px', placeholder = NULL),
-    #     textInput("word13", "", width = '100px', placeholder = NULL),
-    #     textInput("word14", "", width = '100px', placeholder = NULL),
-    #     textInput("word15", "", width = '100px', placeholder = NULL)
-    #   )
-    # })
-    
-    
     output$file1A <- renderText(essay1)
     output$file2A <- renderText(essay2)
     output$file3A <- renderText(essay3)
@@ -351,12 +343,8 @@ print(head(corpusfile))
     output$file2B <- renderText(essay2)
     output$file3B <- renderText(essay3)
     
-    
     output$listValidate <- renderPrint({
-      
-
       wordList <<- lapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
-
       disable("buildingDone")
       output$validInput <- renderText('Invalid input!')
 
@@ -366,6 +354,7 @@ print(head(corpusfile))
         need(all(grepl("word\\d+", wordList) == FALSE), "You can't use the default values."),
         need(all(duplicated(wordList) == FALSE), "Each word must be unique.")
       )
+      
       enable("buildingDone")
       tags$br()
       output$validInput <- renderText('List Validated!')
@@ -394,26 +383,7 @@ print(head(corpusfile))
     output$word2 <- renderText({input$word2})
     output$word3 <- renderText({input$word3})
 
-    output$test <- renderUI(sapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]]))
-    
-    # Dynamically generate "Your List"
-    # 
-    # w <<- list()
-    # for (i in 1:length(wordInputs)){
-    #   wordId <-  paste0("word", i)
-    #   w[[i]] <- renderText({input[[wordId]]})
-    #   print(w)
-    # }
-    # output$yourList <- renderUI(w)
-    
-    # Dynamically populate "Your List"
-    
-    # lapply(1:length(wordInputs), function(i) {
-    #   wordId <-  paste0("word", i)
-    #   output[[wordId]] <- renderText({input[[wordId]]})
-    # })
-
-    
+    # output$test <- renderUI(sapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]]))
     
     output$text3out <- renderPrint({
       essayRatings <- c(input$rating1, input$rating2, input$rating3)
@@ -433,7 +403,7 @@ print(head(corpusfile))
       updateTabItems(session, "sidebar", "analysis")
       addCssClass(selector = "a[data-value='rating']", class = "inactiveLink")
       
-      ## Real analysis happens here because "wordList" is inside the "observeEvent" scope 
+      ## Analysis happens before the "analysis" tab because "wordList" is inside the "observeEvent" scope 
 
       essay_scores <<- matrix(ncol = 0, nrow = length(wordList))
       essay_scores <<- as.data.frame(essay_scores)
@@ -463,7 +433,6 @@ print(head(corpusfile))
       #name columns according to filename and name rows according to "total corpus" list
       # rownames(essay_scores) <- wordList
       
-      
       essay_scores_transposed <- data.frame(t(essay_scores))
       testTAM <- tam(essay_scores_transposed)
       
@@ -473,7 +442,6 @@ print(head(corpusfile))
       abilEST <<- tam.wle(testTAM)
       abil <- abilEST$theta
       print(diff)
-      
       
       rankDiff <- rank(c(diff[1], diff[2], diff[3]))
       rankAbil <- rank(c(abil[1], abil[2], abil[3]))
@@ -493,7 +461,6 @@ print(head(corpusfile))
       output$rankAbil3 <- renderPrint(cat(rankAbil[3]))
       
       output$listValidate <- renderText('List Validated!')
- 
     })
     
     ### ANALYSIS ###
@@ -513,29 +480,32 @@ print(head(corpusfile))
     
     observeEvent(input$validationDone, {
       
-      #submit data into new data row (with <<- you  make sure the variable is updated outside of the scope of the function)
+      # Submit data into new collector entry
       sessionData <- list(signin=signInInfo, words=wordList, ratings=ratingList, scores=essay_scores)
-      print(sessionData)
+      dataCollector[[length(dataCollector)+1]] <- sessionData
+      saveRDS(dataCollector, file = "../responses/resultData.rds")
       
-      if(file.info("../responses/resultData.rds")$size != 0){
-        resultData <- readRDS(file = "../responses/resultData.rds")
-        resultData <- rbind(resultData, sessionData)
-      } else {
-        resultData <- sessionData
-      }
-      
-      saveRDS(resultData, file = "../responses/resultData.rds")
-      print("Session Data:")
-      print(sessionData)
-      
-      rownames(resultData) <- NULL
-      colnames(resultData) <- c("ID", "Words", "Ratings", "Score" )
-      
-      print("Result Data:")      
-      print(resultData)
-      #print(resultData$ID)
-      #write.csv(resultData, "../data.csv")
-      
+#       if(file.info("../responses/resultData.rds")$size != 0){
+#         collector <- as.list(readRDS(file = "../responses/resultData.rds"))
+#         # resultData <- append(resultData, sessionData)
+#         collector[[length(collector)+1]] <- sessionData
+#         
+#       } else {
+#         collector <<- list()
+#         collector[[length(collector)+1]] <- sessionData
+#       }
+#       
+#       saveRDS(collector, file = "../responses/resultData.rds")
+#       print("Session Data:")
+# 
+#       # rownames(resultData) <- "Response"
+#       # colnames(resultData) <- c("ID", "Words", "Ratings", "Score" )
+#       
+#       print("Result Data:")      
+#       # print(resultData)
+#       #print(resultData$ID)
+#       #write.csv(resultData, "../data.csv")
+#       
       updateTabItems(session, "sidebar", "thanks")
       addCssClass(selector = "a[data-value='validation']", class = "inactiveLink")
     })

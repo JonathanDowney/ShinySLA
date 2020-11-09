@@ -10,11 +10,18 @@ setwd(working_directory)
 
 fileslist <- list.files(path = working_directory)
 
+#Data collector
 if(file.info("../responses/resultData.rds")$size != 0){
   dataCollector <- as.list(readRDS(file = "../responses/resultData.rds"))
 } else {
   dataCollector <<- list()
 }
+
+#Word list dataframe
+wordListDF <- data.frame(wordList = character(), delta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
+
+#Essay dataframe
+essayDF <- data.frame(fileName = character(), essayText = character(), theta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
 
 for (i in fileslist){
   #scan files in from "file list"
@@ -361,8 +368,8 @@ essay3 <- (scan(file = fileslist[3], what="char"))
     })
     
     observeEvent(input$buildingDone, {
-      vals <- as.numeric(gsub("word","", names(input)))
-      wOrder<- names(input)[order(vals)]
+      M <-  grep(pattern = "word[[:digit:]]+", x = names(input), value = FALSE)
+      wOrder<- names(input)[M]
       wordList <- lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
       wordList <<- as.data.frame(wordList)
 

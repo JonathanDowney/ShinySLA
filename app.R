@@ -8,24 +8,19 @@ wordInputLength <- c(1:4)
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
 setwd(working_directory)
 
-fileslist <- list.files(path = working_directory)
+fileslist <<- list.files(path = working_directory)
 
-#Data collector
+# Main data collector
 if(file.info("../responses/resultData.rds")$size != 0){
   dataCollector <- as.list(readRDS(file = "../responses/resultData.rds"))
 } else {
   dataCollector <<- list()
 }
 
-#Word list dataframe
-wordListDF <- data.frame(wordList = character(), delta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
-
-#Essay dataframe
-essayDF <- data.frame(fileName = character(), essayText = character(), theta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
-
-for (i in fileslist){
+essayTexts <<- list()
+for (i in 1:length(fileslist)){
   #scan files in from "file list"
-  corpusfile <- scan(file = i, what="char")
+  essayTexts[[i]] <<- scan(file = fileslist[[i]], what="char")
 }
 
 essay1 <- (scan(file = fileslist[1], what="char"))
@@ -128,47 +123,37 @@ essay3 <- (scan(file = fileslist[3], what="char"))
         
         tabItem(tabName = "building",
                 fluidRow(
-                  column(8,
+                  column(4,
                          style='height:80px', align = "center",
                          tags$h2("Essay Prompt: What is the meaning of life?")
                   )
                 ),
                 fluidRow(
-                  column(8, wellPanel(
-                    tabsetPanel(
-                      tabPanel(title = "Text 1",
-                               div(style = 'overflow-y:scroll;height:400px;',
-                                   tags$br(),
-                                   textOutput("file1A")
-                               )
-                      ),
-                      tabPanel(title = "Text 2",
+                  #Dynamic essay text display
+                  column(8, align="center", 
+                         wellPanel(
+                           do.call(tabsetPanel, c(id='tab',lapply(1:5, function(i) {
+                             tabPanel(
+                               title=paste0('Text ', i),
                                tags$br(),
-                               textOutput("file2A")
-                      ),
-                      
-                      tabPanel(title = "Text 3",
-                               tags$br(),
-                               textOutput("file3A")
-                      )
-                    )
-                  )
+                               textOutput(paste0('outA',i))
+                             )
+                           })))                           
+                         )
                   ),
-                  
-                  # Word list
                   column(4,
-                     wellPanel(
-                       fluidRow(
-                         column(4, align="center",
-                                uiOutput("wordInputBlanks"),
-                                actionButton(inputId="buildingDone", align="center", label="Submit my list"),
-                         ),
-                       ),
-                       tags$br(),
-                       textOutput("listValidate"),
-                       tags$br(),
-                       textOutput("validInput")
-                     )
+                         wellPanel(
+                           fluidRow(
+                             column(4, align="center",
+                                    uiOutput("wordInputBlanks"),
+                                    actionButton(inputId="buildingDone", align="center", label="Submit my list"),
+                             ),
+                           ),
+                           tags$br(),
+                           textOutput("listValidate"),
+                           tags$br(),
+                           textOutput("validInput")
+                         )
                   )
                 ),
                 fluidRow(
@@ -183,25 +168,17 @@ essay3 <- (scan(file = fileslist[3], what="char"))
                 h2("Essay Rating"),
                 
                 fluidRow(
-                  column(8, wellPanel(
-                    tabsetPanel(
-                      tabPanel(title = "Text 1",
-                               div(style = 'overflow-y:scroll;height:400px;',
-                                   tags$br(),
-                                   textOutput("file1B")
-                               )
-                      ),
-                      tabPanel(title = "Text 2",
+                  #Dynamic essay text display
+                  column(8, align="center", 
+                         wellPanel(
+                           do.call(tabsetPanel, c(id='tab',lapply(1:5, function(i) {
+                             tabPanel(
+                               title=paste0('Text ', i),
                                tags$br(),
-                               textOutput("file2B")
-                      ),
-                      
-                      tabPanel(title = "Text 3",
-                               tags$br(),
-                               textOutput("file3B")
-                      )
-                    )
-                  )
+                               textOutput(paste0('outB',i))
+                             )
+                           })))                           
+                         )
                   ),
                   
                   column(2, align="center",
@@ -335,20 +312,27 @@ essay3 <- (scan(file = fileslist[3], what="char"))
     
     ### LIST BUILDING ###
 
-    #dynamically generate word input fields
-    v <<- list()
+    #dynamically generate word input fields in UI
+    v <- list()
     for (i in 1:length(wordInputLength)){
       v[[i]] <- textInput(paste0("word",i), label = NULL, width = '100px', placeholder = paste0("word",i))
     }
     output$wordInputBlanks <- renderUI(v)
     
-    output$file1A <- renderText(essay1)
-    output$file2A <- renderText(essay2)
-    output$file3A <- renderText(essay3)
+    #dynamically display essays to UI
+    lapply(1:5, function(j) {
+      output[[paste0('outA',j)]] <- renderPrint({
+        tags$br()
+        cat(essayTexts[[j]], sep = " ")
+      })
+    })
     
-    output$file1B <- renderText(essay1)
-    output$file2B <- renderText(essay2)
-    output$file3B <- renderText(essay3)
+    lapply(1:5, function(j) {
+      output[[paste0('outB',j)]] <- renderPrint({
+        tags$br()
+        cat(essayTexts[[j]], sep = " ")
+      })
+    })
     
     output$listValidate <- renderPrint({
       wordList <<- lapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
@@ -370,8 +354,8 @@ essay3 <- (scan(file = fileslist[3], what="char"))
     observeEvent(input$buildingDone, {
       M <-  grep(pattern = "word[[:digit:]]+", x = names(input), value = FALSE)
       wOrder<- names(input)[M]
-      wordList <- lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
-      wordList <<- as.data.frame(wordList)
+      wordList <<- lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
+      # wordList <<- as.data.frame(wordList)
 
       # Dynamically generate "wordList"
       
@@ -488,7 +472,12 @@ essay3 <- (scan(file = fileslist[3], what="char"))
     observeEvent(input$validationDone, {
       
       # Submit data into new collector entry
-      sessionData <- list(signin=signInInfo, words=wordList, ratings=ratingList, scores=essay_scores)
+      wordListData <- list(wordList = wordList, scores=essay_scores, delta = numeric(), modelRating = numeric(), humanRating = ratingList, modelFit = numeric(), SE = numeric(), comments = character())
+      
+      essayData <<- list(filelist = fileslist, essay_text = essayTexts, theta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
+      
+      sessionData <<- list(signin=signInInfo, wordlist_data = wordListData, essay_data = essayData)
+      
       dataCollector[[length(dataCollector)+1]] <- sessionData
       saveRDS(dataCollector, file = "../responses/resultData.rds")
       

@@ -3,7 +3,10 @@ library(shinyjs)
 library(shinydashboard)
 library(TAM)
 
-wordInputLength <- c(1:4)
+wordInputLength <- c(1:8)
+
+#number of essays showing
+essaysShowing <-8
 
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
 setwd(working_directory)
@@ -12,7 +15,7 @@ fileslist <<- list.files(path = working_directory)
 
 # Main data collector
 if(file.info("../responses/resultData.rds")$size != 0){
-  dataCollector <- as.list(readRDS(file = "../responses/resultData.rds"))
+  dataCollector <<- as.list(readRDS(file = "../responses/resultData.rds"))
 } else {
   dataCollector <<- list()
 }
@@ -23,9 +26,9 @@ for (i in 1:length(fileslist)){
   essayTexts[[i]] <<- scan(file = fileslist[[i]], what="char")
 }
 
-essay1 <- (scan(file = fileslist[1], what="char"))
-essay2 <- (scan(file = fileslist[2], what="char"))
-essay3 <- (scan(file = fileslist[3], what="char"))
+# essay1 <- (scan(file = fileslist[1], what="char"))
+# essay2 <- (scan(file = fileslist[2], what="char"))
+# essay3 <- (scan(file = fileslist[3], what="char"))
 
 # sample1 <- gsub("[[:punct:]]", "", unique(tolower(essay1)))
 {
@@ -132,7 +135,7 @@ essay3 <- (scan(file = fileslist[3], what="char"))
                   #Dynamic essay text display
                   column(8, align="center", 
                          wellPanel(
-                           do.call(tabsetPanel, c(id='tab',lapply(1:5, function(i) {
+                           do.call(tabsetPanel, c(id='tab',lapply(1:essaysShowing, function(i) {
                              tabPanel(
                                title=paste0('Text ', i),
                                tags$br(),
@@ -171,7 +174,7 @@ essay3 <- (scan(file = fileslist[3], what="char"))
                   #Dynamic essay text display
                   column(8, align="center", 
                          wellPanel(
-                           do.call(tabsetPanel, c(id='tab',lapply(1:5, function(i) {
+                           do.call(tabsetPanel, c(id='tab',lapply(1:essaysShowing, function(i) {
                              tabPanel(
                                title=paste0('Text ', i),
                                tags$br(),
@@ -185,7 +188,7 @@ essay3 <- (scan(file = fileslist[3], what="char"))
                          wellPanel(
                            "YOUR LIST:",
                             tags$ol(
-                             uiOutput("yourList")
+                             uiOutput("yourListA")
                             )
                          )
                   ),
@@ -216,29 +219,38 @@ essay3 <- (scan(file = fileslist[3], what="char"))
                          fluidRow(
                            column(4, align="center",
                                   "YOUR LIST:",
-                                  div(id="container",'Word 1:', textOutput('word1Analysis')),
-                                  tags$br(),
-                                  div(id="container",'Word 2:', textOutput('word2Analysis')),
-                                  tags$br(),
-                                  div(id="container",'Word 3:', textOutput('word3Analysis'))
+                                  tags$ol(
+                                    uiOutput("yourListB")
+                                  ) 
+                                  # div(id="container",'Word 1:', textOutput('word1Analysis')),
+                                  # tags$br(),
+                                  # div(id="container",'Word 2:', textOutput('word2Analysis')),
+                                  # tags$br(),
+                                  # div(id="container",'Word 3:', textOutput('word3Analysis'))
                            ),
                            column(4, align="center",
                                   "Your Rank:",
-                                  tags$br(),
-                                  div(id="container","1"),
-                                  tags$br(),
-                                  div(id="container","2"),
-                                  tags$br(),
-                                  div(id="container","3"),
+                                    tags$ol(
+                                      uiOutput("yourRatings")
+                                    )                                  
+                                  # tags$br(),
+                                  # div(id="container","1"),
+                                  # tags$br(),
+                                  # div(id="container","2"),
+                                  # tags$br(),
+                                  # div(id="container","3"),
                            ),
                            column(4, align="center",
                                   "Model Rank:",
-                                  div(id="container", textOutput('rankDiff1'), "(", textOutput("diff1"), ")"),
-                                  tags$br(),
-                                  div(id="container", textOutput('rankDiff2'), "(", textOutput("diff2"), ")"),
-                                  tags$br(),
-                                  div(id="container", textOutput('rankDiff3'), "(", textOutput("diff3"), ")")
-                                  
+                                  tags$ol(
+                                    uiOutput("diffReport"),
+                                  )
+                                  # div(id="container", textOutput('rankDiff1'), "(", textOutput("diff1"), ")"),
+                                  # tags$br(),
+                                  # div(id="container", textOutput('rankDiff2'), "(", textOutput("diff2"), ")"),
+                                  # tags$br(),
+                                  # div(id="container", textOutput('rankDiff3'), "(", textOutput("diff3"), ")")
+                                  # 
                            )
                          )
                         )
@@ -265,12 +277,18 @@ essay3 <- (scan(file = fileslist[3], what="char"))
                            ),
                            column(4, align="center",
                                   "Model Rank:",
-                                  div(id="container", textOutput('rankAbil1'), "(", textOutput("abil1"), ")"),
-                                  tags$br(),
-                                  div(id="container", textOutput('rankAbil2'), "(", textOutput("abil2"), ")"),
-                                  tags$br(),
-                                  div(id="container", textOutput('rankAbil3'), "(", textOutput("abil3"), ")")
-
+                                  wellPanel(
+                                    tags$ol(
+                                      uiOutput("abilReport")
+                                    )
+                                    # div(id="container", textOutput('rankAbil1'), "(", textOutput("abil1"), ")"),
+                                    # tags$br(),
+                                    # div(id="container", textOutput('rankAbil2'), "(", textOutput("abil2"), ")"),
+                                    # tags$br(),
+                                    # div(id="container", textOutput('rankAbil3'), "(", textOutput("abil3"), ")")
+                                    # 
+                                  )
+                                  
                            )
                          )
                        )
@@ -320,14 +338,14 @@ essay3 <- (scan(file = fileslist[3], what="char"))
     output$wordInputBlanks <- renderUI(v)
     
     #dynamically display essays to UI
-    lapply(1:5, function(j) {
+    lapply(1:essaysShowing, function(j) {
       output[[paste0('outA',j)]] <- renderPrint({
         tags$br()
         cat(essayTexts[[j]], sep = " ")
       })
     })
     
-    lapply(1:5, function(j) {
+    lapply(1:essaysShowing, function(j) {
       output[[paste0('outB',j)]] <- renderPrint({
         tags$br()
         cat(essayTexts[[j]], sep = " ")
@@ -353,14 +371,18 @@ essay3 <- (scan(file = fileslist[3], what="char"))
     
     observeEvent(input$buildingDone, {
       M <-  grep(pattern = "word[[:digit:]]+", x = names(input), value = FALSE)
-      wOrder<- names(input)[M]
+      print(M)
+      wOrder<- sort(names(input)[M])
+      print(wOrder)
       wordList <<- lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
       # wordList <<- as.data.frame(wordList)
 
       # Dynamically generate "wordList"
-      
-      output$yourList <- renderUI({
-        lapply(grep(pattern = "word+[[:digit:]]+", x = wOrder, value = TRUE), function(x) tags$li(input[[x]]))
+      output$yourListA <- renderUI({
+        lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) tags$li(input[[x]]))
+      })
+      output$yourListB <- renderUI({
+        lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) tags$li(input[[x]]))
       })
 
       updateTabItems(session, "sidebar", "rating")
@@ -370,14 +392,29 @@ essay3 <- (scan(file = fileslist[3], what="char"))
     
     ### ESSAY RATING ###
     
-    output$word1 <- renderText({input$word1})
-    output$word2 <- renderText({input$word2})
-    output$word3 <- renderText({input$word3})
+    # output$word1 <- renderText({input$word1})
+    # output$word2 <- renderText({input$word2})
+    # output$word3 <- renderText({input$word3})
 
     # output$test <- renderUI(sapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]]))
     
     output$text3out <- renderPrint({
-      essayRatings <- c(input$rating1, input$rating2, input$rating3)
+      
+      # Dynamically generate "ratings list"
+      
+      output$yourRatings <- renderUI({
+        N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
+        rOrder <- sort(names(input)[N])
+        lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(input[[x]]))
+      })
+      
+      #Also again outside of the render scope to put in the data collector
+      N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
+      rOrder <<- sort(names(input)[N])
+      ratingList <<- lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) input[[x]])
+      
+      # essayRatings <- c(input$rating1, input$rating2, input$rating3)
+      
       # disable("ratingDone")
       # output$ratingsValidate <- renderText('Invalid ratings!')
       # 
@@ -390,7 +427,7 @@ essay3 <- (scan(file = fileslist[3], what="char"))
     })
     
     observeEvent(input$ratingDone, {
-      ratingList <<- data.frame(input$rating1, input$rating2, input$rating3)
+      # ratingList <<- data.frame(input$rating1, input$rating2, input$rating3)
       updateTabItems(session, "sidebar", "analysis")
       addCssClass(selector = "a[data-value='rating']", class = "inactiveLink")
       
@@ -434,16 +471,30 @@ essay3 <- (scan(file = fileslist[3], what="char"))
       abil <- abilEST$theta
       print(diff)
       
-      rankDiff <- rank(c(diff[1], diff[2], diff[3]))
-      rankAbil <- rank(c(abil[1], abil[2], abil[3]))
+      # rankDiff <- rank(c(diff[1], diff[2], diff[3]))
+      # print(rankDiff)
+      rankDiff <- rank(diff, ties.method = "random")
       
-      output$diff1 <- renderPrint(cat(diff[1])) #cat() to remove row number from output
-      output$diff2 <- renderPrint(cat(diff[2]))
-      output$diff3 <- renderPrint(cat(diff[3]))
-      output$rankDiff1 <- renderPrint(cat(rankDiff[1]))
-      output$rankDiff2 <- renderPrint(cat(rankDiff[2]))
-      output$rankDiff3 <- renderPrint(cat(rankDiff[3]))
+      output$diffReport <- renderUI({
+        lapply(paste0(rankDiff, " delta: (", diff, ")"), function(x) tags$li(x))
+      })
       
+      sampleAbil <- abil[1:essaysShowing]
+      rankAbil <- rank(sampleAbil, ties.method = "random")
+    
+      output$abilReport <- renderUI({
+        lapply(paste0(rankAbil, " theta: (", sampleAbil, ")"), function(x) tags$li(x))
+      })
+      # rankAbil <- rank(c(abil[1], abil[2], abil[3]))
+      # 
+      # output$diff1 <- renderPrint(cat(diff[1])) #cat() to remove row number from output
+      # output$diff2 <- renderPrint(cat(diff[2]))
+      # output$diff3 <- renderPrint(cat(diff[3]))
+      # 
+      # output$rankDiff1 <- renderPrint(cat(rankDiff[1]))
+      # output$rankDiff2 <- renderPrint(cat(rankDiff[2]))
+      # output$rankDiff3 <- renderPrint(cat(rankDiff[3]))
+      # 
       output$abil1 <- renderPrint(cat(abil[1])) #cat() to remove row number from output
       output$abil2 <- renderPrint(cat(abil[2]))
       output$abil3 <- renderPrint(cat(abil[3]))
@@ -478,7 +529,7 @@ essay3 <- (scan(file = fileslist[3], what="char"))
       
       sessionData <<- list(signin=signInInfo, wordlist_data = wordListData, essay_data = essayData)
       
-      dataCollector[[length(dataCollector)+1]] <- sessionData
+      dataCollector[[length(dataCollector)+1]] <<- sessionData
       saveRDS(dataCollector, file = "../responses/resultData.rds")
       
 #       if(file.info("../responses/resultData.rds")$size != 0){

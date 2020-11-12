@@ -3,11 +3,13 @@ library(shinyjs)
 library(shinydashboard)
 library(TAM)
 
-wordInputLength <- c(1:8)
+# Number of word input blanks
+wordInputLength <- 2
 
-#number of essays showing
-essaysShowing <-8
+# Number of essays showing
+essaysShowing <- 4
 
+#Working directory is where you put the texts
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
 setwd(working_directory)
 
@@ -26,12 +28,13 @@ for (i in 1:length(fileslist)){
   essayTexts[[i]] <<- scan(file = fileslist[[i]], what="char")
 }
 
-# essay1 <- (scan(file = fileslist[1], what="char"))
-# essay2 <- (scan(file = fileslist[2], what="char"))
-# essay3 <- (scan(file = fileslist[3], what="char"))
-
-# sample1 <- gsub("[[:punct:]]", "", unique(tolower(essay1)))
 {
+  #Load sidebar after 1 second delay. Otherwise, all of the sidebar content is briefly accessible before it is hidden.
+  load_data <- function() {
+    Sys.sleep(1)
+    hide("loading_page")
+    show("sidebar_content")
+  }
   
   ui <- dashboardPage(
     dashboardHeader(
@@ -42,51 +45,61 @@ for (i in 1:length(fileslist)){
     dashboardSidebar(
       useShinyjs(),
       width = 220,
-      sidebarMenu(
-        id = "sidebar",
-        
-        #Menu Item: Instructions
-        
-        menuItem("Instructions", tabName = "instructions", icon = icon("bullhorn"), badgeColor = "red"),
-        
-        #Menu Item: Step 1
-        #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-        menuItem("Step 1: Sign-in", tabName = "signIn", icon = icon("address-card")),
-        
-        #Menu Item: Step 2
-        conditionalPanel(
-          condition = "input.signInDone == 1",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Step 2: Build vocab list", tabName = "building", icon = icon("clipboard-list"))
-          )),
-        
-        #Menu Item: Step 3
-        conditionalPanel(
-          condition = "input.buildingDone == 1 && output.validInput == 'List Validated!'",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
-          )),
-        
-        #Menu Item: Step 4
-        conditionalPanel(
-          condition = "input.ratingDone == 1",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Step 4: Computer analysis", tabName = "analysis", icon = icon("chart-line"))
-          )),
-        
-        #Menu Item: Step 5
-        conditionalPanel(
-          condition = "input.analysisDone == 1",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Step 5: Human validation", tabName = "validation", icon = icon("microscope"))
-          )),
-        
-        #Menu Item: Thanks!
-        conditionalPanel(
-          condition = "input.validationDone == 1",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Thanks!!", tabName = "thanks", icon = icon("child"))
-          ))
+      
+      div(
+        id = "loading_page",
+        h2("Loading...")
+      ),
+      hidden(
+        div(
+          id = "sidebar_content",
+        sidebarMenu(
+          id = "sidebar",
+          
+          #Menu Item: Instructions
+          
+          menuItem("Instructions", tabName = "instructions", icon = icon("bullhorn"), badgeColor = "red"),
+          
+          #Menu Item: Step 1
+          #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+          menuItem("Step 1: Sign-in", tabName = "signIn", icon = icon("address-card")),
+          
+          #Menu Item: Step 2
+          conditionalPanel(
+            condition = "input.signInDone == 1",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Step 2: Build vocab list", tabName = "building", icon = icon("clipboard-list"))
+            )),
+          
+          #Menu Item: Step 3
+          conditionalPanel(
+            condition = "input.buildingDone == 1 && output.validInput == 'List Validated!'",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
+            )),
+          
+          #Menu Item: Step 4
+          conditionalPanel(
+            condition = "input.ratingDone == 1",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Step 4: Computer analysis", tabName = "analysis", icon = icon("chart-line"))
+            )),
+          
+          #Menu Item: Step 5
+          conditionalPanel(
+            condition = "input.analysisDone == 1",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Step 5: Human validation", tabName = "validation", icon = icon("microscope"))
+            )),
+          
+          #Menu Item: Thanks!
+          conditionalPanel(
+            condition = "input.validationDone == 1",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Thanks!!", tabName = "thanks", icon = icon("child"))
+            ))
+        )
+        )
       )
     ),
     
@@ -169,7 +182,6 @@ for (i in 1:length(fileslist)){
         
         tabItem(tabName = "rating",
                 h2("Essay Rating"),
-                
                 fluidRow(
                   #Dynamic essay text display
                   column(8, align="center", 
@@ -183,7 +195,6 @@ for (i in 1:length(fileslist)){
                            })))                           
                          )
                   ),
-                  
                   column(2, align="center",
                          wellPanel(
                            "YOUR LIST:",
@@ -192,22 +203,20 @@ for (i in 1:length(fileslist)){
                             )
                          )
                   ),
-                  
                   column(2, align="center",
                          wellPanel(
-                           selectInput("rating1", "Rating: ESSAY A",
-                                       c("1 = best, 10 = worst" = "", 1:10)),
-                           selectInput("rating2", "Rating: ESSAY B",
-                                       c("Choose one" = "", 1:10)),
-                           selectInput("rating3", "Rating: ESSAY C",
-                                       c("Choose one" = "", 1:10)),
-                           textOutput("text3out"),
-                           textOutput("ratingsValidate"),
+                           fluidRow(
+                             column(12, align="center",
+                                    uiOutput("ratingInputSelectors"),
+                                    actionButton(inputId="ratingDone", align="center", label="Done"),
+                             ),
+                           ),
+                           tags$br(),
+                           textOutput("ratingsValidate")
                          )
                   )
                 ),
                 actionButton(inputId="ratingDone", align="center", label="Done"),
-                
         ),
         
         ### ANALYSIS ###  
@@ -215,6 +224,7 @@ for (i in 1:length(fileslist)){
         tabItem(tabName = "analysis",
                 h2("Analysis"),
                 column(6, align="center",
+                       "WORD ANALYSIS",
                        wellPanel(
                          fluidRow(
                            column(4, align="center",
@@ -222,79 +232,52 @@ for (i in 1:length(fileslist)){
                                   tags$ol(
                                     uiOutput("yourListB")
                                   ) 
-                                  # div(id="container",'Word 1:', textOutput('word1Analysis')),
-                                  # tags$br(),
-                                  # div(id="container",'Word 2:', textOutput('word2Analysis')),
-                                  # tags$br(),
-                                  # div(id="container",'Word 3:', textOutput('word3Analysis'))
                            ),
                            column(4, align="center",
-                                  "Your Rank:",
-                                    tags$ol(
-                                      uiOutput("yourRatings")
-                                    )                                  
-                                  # tags$br(),
-                                  # div(id="container","1"),
-                                  # tags$br(),
-                                  # div(id="container","2"),
-                                  # tags$br(),
-                                  # div(id="container","3"),
+                                  "Your word ranking:",
+                                  lapply(1:wordInputLength, function(i) {
+                                    textOutput(paste0('staticIndexYourRanking',i))
+                                  })
                            ),
                            column(4, align="center",
                                   "Model Rank:",
-                                  tags$ol(
-                                    uiOutput("diffReport"),
+                                  tags$ul(
+                                    uiOutput("diffReport"), style = "list-style-type: none; padding-left: 0; margin: 0"
                                   )
-                                  # div(id="container", textOutput('rankDiff1'), "(", textOutput("diff1"), ")"),
-                                  # tags$br(),
-                                  # div(id="container", textOutput('rankDiff2'), "(", textOutput("diff2"), ")"),
-                                  # tags$br(),
-                                  # div(id="container", textOutput('rankDiff3'), "(", textOutput("diff3"), ")")
-                                  # 
                            )
                          )
                         )
                 ),
                 column(6, align="center",
+                       "ESSAY ANALYSIS",
                        wellPanel(
                          fluidRow(
                            column(4, align="center",
                                   "Essays:",
-                                  div(id="container",'Essay 1'),
-                                  tags$br(),
-                                  div(id="container",'Essay 2:'),
-                                  tags$br(),
-                                  div(id="container",'Essay 3:')
+                                  tags$ul(
+                                    uiOutput("rankedEssayOrder"), style = "list-style-type: none; padding-left: 0; margin: 0"
+                                  )                                  
                            ),
                            column(4, align="center",
                                   "Your Rank:",
-                                  tags$br(),
-                                  div(id="container","1"),
-                                  tags$br(),
-                                  div(id="container","2"),
-                                  tags$br(),
-                                  div(id="container","3"),
+                                  lapply(1:essaysShowing, function(i) {
+                                      textOutput(paste0('staticIndex',i))
+                                  })
                            ),
                            column(4, align="center",
                                   "Model Rank:",
-                                  wellPanel(
-                                    tags$ol(
-                                      uiOutput("abilReport")
+                                    tags$ul(
+                                      uiOutput("abilReport"), style = "list-style-type: none; padding-left: 0; margin: 0"
                                     )
-                                    # div(id="container", textOutput('rankAbil1'), "(", textOutput("abil1"), ")"),
-                                    # tags$br(),
-                                    # div(id="container", textOutput('rankAbil2'), "(", textOutput("abil2"), ")"),
-                                    # tags$br(),
-                                    # div(id="container", textOutput('rankAbil3'), "(", textOutput("abil3"), ")")
-                                    # 
-                                  )
-                                  
                            )
                          )
                        )
                 ),
-           
-                p("Please wait until analysis is complete. This could take a couple minutes if the server is busy."),
+                column(4, align="center",
+                       "Testing:",
+                       uiOutput("testing")
+                       
+                ),
                 actionButton(inputId="analysisDone", align="center", label="Done"),
         ),
         
@@ -303,14 +286,12 @@ for (i in 1:length(fileslist)){
         tabItem(tabName = "validation",
                 h2("Validation"),
                 actionButton(inputId="validationDone", align="center", label="Done"),
-                
         ),
         
         ### THANKS ###  
         
         tabItem(tabName = "thanks",
                 h2("THANKS!")
-                
         )
       )
     )
@@ -318,12 +299,15 @@ for (i in 1:length(fileslist)){
   
   server <- function(input, output, session){
     
+    #sidebar loading
+    load_data()
     
     ### SIGN IN ###
     
     observeEvent(input$signInDone, {
       SignInTimeGMT=as.character(Sys.time())
-      signInInfo <<- c(SignInTimeGMT, input$signIn1,input$signIn2, input$signIn3)
+      signInInfo <- c(SignInTimeGMT, input$signIn1,input$signIn2, input$signIn3)
+      
       updateTabItems(session, "sidebar", "building")
       addCssClass(selector = "a[data-value='signIn']", class = "inactiveLink")
     })
@@ -332,7 +316,7 @@ for (i in 1:length(fileslist)){
 
     #dynamically generate word input fields in UI
     v <- list()
-    for (i in 1:length(wordInputLength)){
+    for (i in 1:wordInputLength){
       v[[i]] <- textInput(paste0("word",i), label = NULL, width = '100px', placeholder = paste0("word",i))
     }
     output$wordInputBlanks <- renderUI(v)
@@ -349,6 +333,14 @@ for (i in 1:length(fileslist)){
       output[[paste0('outB',j)]] <- renderPrint({
         tags$br()
         cat(essayTexts[[j]], sep = " ")
+      })
+    })
+    
+    # Dyanmic index value range to UI 
+    lapply(1:essaysShowing, function(j) {
+      output[[paste0('staticIndex',j)]] <- renderPrint({
+        tags$br()
+        cat(j)
       })
     })
     
@@ -384,34 +376,46 @@ for (i in 1:length(fileslist)){
       output$yourListB <- renderUI({
         lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) tags$li(input[[x]]))
       })
+      
+      lapply(1:essaysShowing, function(j) {
+        output[[paste0('staticIndexYourRanking',j)]] <- renderPrint({
+          tags$br()
+          cat(j)
+        })
+      })
 
       updateTabItems(session, "sidebar", "rating")
       addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
       
-    })
+      w <- list()
+      for (i in 1:essaysShowing){
+        w[[i]] <- selectInput(paste0("rating",i), c(paste0("Essay ",i,":")), c("Choose one", 1:essaysShowing)) 
+      }
+      output$ratingInputSelectors <- renderUI(w)
+
     
     ### ESSAY RATING ###
     
-    # output$word1 <- renderText({input$word1})
-    # output$word2 <- renderText({input$word2})
-    # output$word3 <- renderText({input$word3})
-
-    # output$test <- renderUI(sapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]]))
-    
-    output$text3out <- renderPrint({
-      
       # Dynamically generate "ratings list"
-      
-      output$yourRatings <- renderUI({
+      output$rankedEssayOrder <- renderUI({
         N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
+        # Ntest <- lapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
+        
         rOrder <- sort(names(input)[N])
-        lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(input[[x]]))
+        lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(paste0("Essay ",input[[x]])))
+        
+        # print(Ntest)
       })
       
+      #BROKEN
       #Also again outside of the render scope to put in the data collector
       N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
+      print(names(input))
+      
+      print(N)
       rOrder <<- sort(names(input)[N])
-      ratingList <<- lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) input[[x]])
+      print(rOrder)
+      ratingsList <<- lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) input[[x]])
       
       # essayRatings <- c(input$rating1, input$rating2, input$rating3)
       
@@ -423,6 +427,7 @@ for (i in 1:length(fileslist)){
       #   need(all(duplicated(essayRatings) == FALSE), "Each rating must have a unique value.")
       # )
       # enable("ratingDone")
+      
       output$ratingsValidate <- renderText('Ratings Validated!')
     })
     
@@ -462,9 +467,7 @@ for (i in 1:length(fileslist)){
       # rownames(essay_scores) <- wordList
       
       essay_scores_transposed <- data.frame(t(essay_scores))
-      testTAM <- tam(essay_scores_transposed)
-      
-      print(head(essay_scores))
+      testTAM <<- tam(essay_scores_transposed, verbose = FALSE)
       
       diff <- testTAM$xsi$xsi
       abilEST <<- tam.wle(testTAM)
@@ -473,43 +476,44 @@ for (i in 1:length(fileslist)){
       
       # rankDiff <- rank(c(diff[1], diff[2], diff[3]))
       # print(rankDiff)
+      
       rankDiff <- rank(diff, ties.method = "random")
       
       output$diffReport <- renderUI({
-        lapply(paste0(rankDiff, " delta: (", diff, ")"), function(x) tags$li(x))
+        lapply(paste0(rankDiff, " delta: (", round(diff,1), ")"), function(x) tags$li(x))
       })
       
       sampleAbil <- abil[1:essaysShowing]
       rankAbil <- rank(sampleAbil, ties.method = "random")
     
       output$abilReport <- renderUI({
-        lapply(paste0(rankAbil, " theta: (", sampleAbil, ")"), function(x) tags$li(x))
+        lapply(paste0(rankAbil, " theta: (", round(sampleAbil,1), ")"), function(x) tags$li(x))
       })
-      # rankAbil <- rank(c(abil[1], abil[2], abil[3]))
-      # 
-      # output$diff1 <- renderPrint(cat(diff[1])) #cat() to remove row number from output
-      # output$diff2 <- renderPrint(cat(diff[2]))
-      # output$diff3 <- renderPrint(cat(diff[3]))
-      # 
-      # output$rankDiff1 <- renderPrint(cat(rankDiff[1]))
-      # output$rankDiff2 <- renderPrint(cat(rankDiff[2]))
-      # output$rankDiff3 <- renderPrint(cat(rankDiff[3]))
-      # 
-      output$abil1 <- renderPrint(cat(abil[1])) #cat() to remove row number from output
-      output$abil2 <- renderPrint(cat(abil[2]))
-      output$abil3 <- renderPrint(cat(abil[3]))
-      output$rankAbil1 <- renderPrint(cat(rankAbil[1]))
-      output$rankAbil2 <- renderPrint(cat(rankAbil[2]))
-      output$rankAbil3 <- renderPrint(cat(rankAbil[3]))
+     
+      print(rankDiff)
+      print(ratingsList)
+
+      output$testing <- renderPrint({
+        
+        #essay rating
+        
+        # 
+        # x <- sapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
+        # y <- unlist(rankDiff)
+        # 
+        # print(paste0("x: ",x))
+        # print(paste0("y: ",y))
       
+        print(paste0("Difference in ratings:", "???"))
+   })
+      
+      reactive({
+        print(unlist(rankDiff)-unlist(ratingList))
+      })
       output$listValidate <- renderText('List Validated!')
     })
     
     ### ANALYSIS ###
-    
-    output$word1Analysis <- renderText({input$word1})
-    output$word2Analysis <- renderText({input$word2})
-    output$word3Analysis <- renderText({input$word3})
     
     # submit button
     
@@ -523,36 +527,15 @@ for (i in 1:length(fileslist)){
     observeEvent(input$validationDone, {
       
       # Submit data into new collector entry
-      wordListData <- list(wordList = wordList, scores=essay_scores, delta = numeric(), modelRating = numeric(), humanRating = ratingList, modelFit = numeric(), SE = numeric(), comments = character())
+      wordListData <- list(wordList = wordList, scores=essay_scores, delta = numeric(), modelRating = numeric(), humanRating = ratingsList, modelFit = numeric(), SE = numeric(), comments = character())
       
       essayData <<- list(filelist = fileslist, essay_text = essayTexts, theta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
       
-      sessionData <<- list(signin=signInInfo, wordlist_data = wordListData, essay_data = essayData)
+      # sessionData <<- list(signin=signInInfo, wordlist_data = wordListData, essay_data = essayData)
       
       dataCollector[[length(dataCollector)+1]] <<- sessionData
       saveRDS(dataCollector, file = "../responses/resultData.rds")
       
-#       if(file.info("../responses/resultData.rds")$size != 0){
-#         collector <- as.list(readRDS(file = "../responses/resultData.rds"))
-#         # resultData <- append(resultData, sessionData)
-#         collector[[length(collector)+1]] <- sessionData
-#         
-#       } else {
-#         collector <<- list()
-#         collector[[length(collector)+1]] <- sessionData
-#       }
-#       
-#       saveRDS(collector, file = "../responses/resultData.rds")
-#       print("Session Data:")
-# 
-#       # rownames(resultData) <- "Response"
-#       # colnames(resultData) <- c("ID", "Words", "Ratings", "Score" )
-#       
-#       print("Result Data:")      
-#       # print(resultData)
-#       #print(resultData$ID)
-#       #write.csv(resultData, "../data.csv")
-#       
       updateTabItems(session, "sidebar", "thanks")
       addCssClass(selector = "a[data-value='validation']", class = "inactiveLink")
     })

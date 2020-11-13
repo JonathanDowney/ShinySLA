@@ -4,16 +4,21 @@ library(shinydashboard)
 library(TAM)
 
 # Number of word input blanks
-wordInputLength <- 2
+wordInputLength <- 4
 
-# Number of essays showing
-essaysShowing <- 4
+# Number of essays showing for rating
+essaysShowing <- 6
+
+# Number of essays showing for validation
+validationEssays <- 2
 
 #Working directory is where you put the texts
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
 setwd(working_directory)
 
 fileslist <<- list.files(path = working_directory)
+
+
 
 # Main data collector
 if(file.info("../responses/resultData.rds")$size != 0){
@@ -27,8 +32,7 @@ for (i in 1:length(fileslist)){
   #scan files in from "file list"
   essayTexts[[i]] <<- scan(file = fileslist[[i]], what="char")
 }
-
-{
+{ 
   #Load sidebar after 1 second delay. Otherwise, all of the sidebar content is briefly accessible before it is hidden.
   load_data <- function() {
     Sys.sleep(1)
@@ -254,15 +258,16 @@ for (i in 1:length(fileslist)){
                          fluidRow(
                            column(4, align="center",
                                   "Essays:",
-                                  tags$ul(
-                                    uiOutput("rankedEssayOrder"), style = "list-style-type: none; padding-left: 0; margin: 0"
-                                  )                                  
+                                  lapply(1:essaysShowing, function(i) {
+                                    textOutput(paste0('staticIndex',i))
+                                  })
+                                                                   
                            ),
                            column(4, align="center",
                                   "Your Rank:",
-                                  lapply(1:essaysShowing, function(i) {
-                                      textOutput(paste0('staticIndex',i))
-                                  })
+                                  tags$ol(
+                                    uiOutput("rankedEssayOrder"), style = "list-style-type: none; padding-left: 0; margin: 0"
+                                  ) 
                            ),
                            column(4, align="center",
                                   "Model Rank:",
@@ -273,11 +278,7 @@ for (i in 1:length(fileslist)){
                          )
                        )
                 ),
-                column(4, align="center",
-                       "Testing:",
-                       uiOutput("testing")
-                       
-                ),
+               
                 actionButton(inputId="analysisDone", align="center", label="Done"),
         ),
         
@@ -285,6 +286,40 @@ for (i in 1:length(fileslist)){
         
         tabItem(tabName = "validation",
                 h2("Validation"),
+                fluidRow(
+                  column(12, align="center",
+                  wellPanel(
+                    do.call(tabsetPanel, c(id='tab',lapply(1:validationEssays, function(i) {
+                      tabPanel(
+                        title=textOutput(paste0('validationEssayTitle',i)),
+                        tags$br(),
+                        fluidRow(
+                        column(6, align="center",
+                          textOutput(paste0('validationEssay',i))
+                        ),
+                        column(6, align="center",
+                               uiOutput(paste0('validationEssayQ',i))
+                        )
+                        )
+                      )
+                    })))                           
+                  )
+                         
+                  )
+                ),
+                column(6, align="center", 
+                       wellPanel(
+                         do.call(tabsetPanel, c(id='tab',lapply(1:essaysShowing, function(i) {
+                           tabPanel(
+                             title=paste0('Text ', i),
+                             tags$br(),
+                             textOutput(paste0('outC',i))
+                           )
+                         })))                           
+                       )
+                ),
+               
+                
                 actionButton(inputId="validationDone", align="center", label="Done"),
         ),
         
@@ -299,6 +334,11 @@ for (i in 1:length(fileslist)){
   
   server <- function(input, output, session){
     
+    # Session data collector
+    sessionData <- list()
+    
+    sessionData$essayData$essayTexts <- essayTexts
+    
     #sidebar loading
     load_data()
     
@@ -306,7 +346,7 @@ for (i in 1:length(fileslist)){
     
     observeEvent(input$signInDone, {
       SignInTimeGMT=as.character(Sys.time())
-      signInInfo <- c(SignInTimeGMT, input$signIn1,input$signIn2, input$signIn3)
+      sessionData$signInInfo <<- c(SignInTimeGMT, input$signIn1,input$signIn2, input$signIn3)
       
       updateTabItems(session, "sidebar", "building")
       addCssClass(selector = "a[data-value='signIn']", class = "inactiveLink")
@@ -336,7 +376,14 @@ for (i in 1:length(fileslist)){
       })
     })
     
-    # Dyanmic index value range to UI 
+    lapply(1:essaysShowing, function(j) {
+      output[[paste0('outC',j)]] <- renderPrint({
+        tags$br()
+        cat(essayTexts[[j]], sep = " ")
+      })
+    })
+    
+    # Dynanmic index value range to UI 
     lapply(1:essaysShowing, function(j) {
       output[[paste0('staticIndex',j)]] <- renderPrint({
         tags$br()
@@ -366,7 +413,12 @@ for (i in 1:length(fileslist)){
       print(M)
       wOrder<- sort(names(input)[M])
       print(wOrder)
-      wordList <<- lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
+      
+      wordList <<- sapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
+      
+      # For data collector
+      sessionData$wordData$wordList <<- wordList
+      
       # wordList <<- as.data.frame(wordList)
 
       # Dynamically generate "wordList"
@@ -402,22 +454,14 @@ for (i in 1:length(fileslist)){
         # Ntest <- lapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
         
         rOrder <- sort(names(input)[N])
-        lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(paste0("Essay ",input[[x]])))
+        lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(input[[x]]))
         
         # print(Ntest)
       })
       
-      #BROKEN
-      #Also again outside of the render scope to put in the data collector
-      N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
-      print(names(input))
-      
-      print(N)
-      rOrder <<- sort(names(input)[N])
-      print(rOrder)
-      ratingsList <<- lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) input[[x]])
-      
-      # essayRatings <- c(input$rating1, input$rating2, input$rating3)
+     
+      # For data collector
+ 
       
       # disable("ratingDone")
       # output$ratingsValidate <- renderText('Invalid ratings!')
@@ -469,50 +513,78 @@ for (i in 1:length(fileslist)){
       essay_scores_transposed <- data.frame(t(essay_scores))
       testTAM <<- tam(essay_scores_transposed, verbose = FALSE)
       
-      diff <- testTAM$xsi$xsi
+      wordDelta <- testTAM$xsi$xsi
       abilEST <<- tam.wle(testTAM)
-      abil <- abilEST$theta
-      print(diff)
-      
+      essayTheta <- abilEST$theta
+
       # rankDiff <- rank(c(diff[1], diff[2], diff[3]))
       # print(rankDiff)
       
-      rankDiff <- rank(diff, ties.method = "random")
+      rankDiff <- rank(wordDelta, ties.method = "random")
       
       output$diffReport <- renderUI({
-        lapply(paste0(rankDiff, " delta: (", round(diff,1), ")"), function(x) tags$li(x))
+        lapply(paste0(rankDiff, " delta: (", round(wordDelta,1), ")"), function(x) tags$li(x))
       })
       
-      sampleAbil <- abil[1:essaysShowing]
+      sampleAbil <- essayTheta[1:essaysShowing]
       rankAbil <- rank(sampleAbil, ties.method = "random")
     
       output$abilReport <- renderUI({
         lapply(paste0(rankAbil, " theta: (", round(sampleAbil,1), ")"), function(x) tags$li(x))
       })
      
-      print(rankDiff)
-      print(ratingsList)
-
-      output$testing <- renderPrint({
-        
-        #essay rating
-        
-        # 
-        # x <- sapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
-        # y <- unlist(rankDiff)
-        # 
-        # print(paste0("x: ",x))
-        # print(paste0("y: ",y))
-      
-        print(paste0("Difference in ratings:", "???"))
-   })
-      
       reactive({
         print(unlist(rankDiff)-unlist(ratingList))
       })
+      
       output$listValidate <- renderText('List Validated!')
-    })
+      
+      # TAM stats to data collector
+      sessionData$wordData$wordDifficulty <<- wordDelta
+      sessionData$essayData$essayLevel <<- essayTheta
+      sessionData$essayData$sampledEssayRank <<- rankAbil
+      
+      # Essay Ratings to data collector
+      N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
+      rOrder <<- sort(names(input)[N])
+      ratingsList <<- as.integer(sapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) input[[x]]))
+      sessionData$essayData$ratingsList <<- ratingsList
     
+      exampleEssays <- sessionData$essayData$essayTexts
+      difference <- abs(sessionData$essayData$ratingsList - sessionData$essayData$sampledEssayRank)
+      
+      #Display the "j" essays with the largest rating differences
+      
+      lapply(1:validationEssays, function(j) {
+        output[[paste0('validationEssay',j)]] <- renderPrint({
+          tags$br()
+          cat(exampleEssays[[(order(difference, decreasing = TRUE)[[j]])]], sep = " ")
+        })
+      })
+      
+      lapply(1:validationEssays, function(j) {
+        output[[paste0('validationEssayTitle',j)]] <- renderPrint({
+          cat(paste0("Essay ", order(difference, decreasing = TRUE)[[j]]))
+        })
+      })
+      
+      lapply(1:validationEssays, function(j) {
+        output[[paste0('validationEssayQ',j)]] <- renderPrint({
+          wellPanel(
+            textAreaInput(paste0("validationEssayInput",j), "Response", value = "Response", width = '400px', height = '200px', placeholder = "Your response...")
+          )
+        })
+      })
+      
+      # column(6, align="center",
+      #        wellPanel(
+      #          textAreaInput("validationQ1", "Response", value = "Response", width = '400px', height = '200px', placeholder = "Your response...")
+      #        )
+      # )
+      
+      
+    })
+      
     ### ANALYSIS ###
     
     # submit button
@@ -527,10 +599,10 @@ for (i in 1:length(fileslist)){
     observeEvent(input$validationDone, {
       
       # Submit data into new collector entry
-      wordListData <- list(wordList = wordList, scores=essay_scores, delta = numeric(), modelRating = numeric(), humanRating = ratingsList, modelFit = numeric(), SE = numeric(), comments = character())
-      
-      essayData <<- list(filelist = fileslist, essay_text = essayTexts, theta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
-      
+      # wordListData <- list(wordList = wordList, scores=essay_scores, delta = numeric(), modelRating = numeric(), humanRating = ratingsList, modelFit = numeric(), SE = numeric(), comments = character())
+      # 
+      # essayData <<- list(filelist = fileslist, essay_text = essayTexts, theta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
+      # 
       # sessionData <<- list(signin=signInInfo, wordlist_data = wordListData, essay_data = essayData)
       
       dataCollector[[length(dataCollector)+1]] <<- sessionData

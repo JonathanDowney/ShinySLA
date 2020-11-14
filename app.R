@@ -3,26 +3,43 @@ library(shinyjs)
 library(shinydashboard)
 library(TAM)
 
+# Number of word input blanks
+wordInputLength <- 12
+
+# Number of essays showing for rating
+essaysShowing <- 8
+
+# Number of essays showing for validation
+validationEssays <- 2
+
+# Number of essays showing for validation
+validationWords <- 4
+
+#Working directory is where you put the texts
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
 setwd(working_directory)
 
-fileslist <- list.files(path = working_directory)
+fileslist <<- list.files(path = working_directory)
 
-wordInputLength <- c(1:4)
-
-for (i in fileslist){
-  #scan files in from "file list"
-  corpusfile <- scan(file = i, what="char")
+# Main data collector
+if(file.info("../responses/resultData.rds")$size != 0){
+  dataCollector <<- as.list(readRDS(file = "../responses/resultData.rds"))
+} else {
+  dataCollector <<- list()
 }
 
-essay1 <- (scan(file = fileslist[1], what="char"))
-essay2 <- (scan(file = fileslist[2], what="char"))
-essay3 <- (scan(file = fileslist[3], what="char"))
-
-# sample1 <- gsub("[[:punct:]]", "", unique(tolower(essay1)))
-print(head(corpusfile))
-
-{
+essayTexts <<- list()
+for (i in 1:length(fileslist)){
+  #scan files in from "file list"
+  essayTexts[[i]] <<- scan(file = fileslist[[i]], what="char")
+}
+{ 
+  #Load sidebar after 1 second delay. Otherwise, all of the sidebar content is briefly accessible before it is hidden.
+  load_data <- function() {
+    Sys.sleep(1)
+    hide("loading_page")
+    show("sidebar_content")
+  }
   
   ui <- dashboardPage(
     dashboardHeader(
@@ -33,51 +50,61 @@ print(head(corpusfile))
     dashboardSidebar(
       useShinyjs(),
       width = 220,
-      sidebarMenu(
-        id = "sidebar",
-        
-        #Menu Item: Instructions
-        
-        menuItem("Instructions", tabName = "instructions", icon = icon("bullhorn"), badgeColor = "red"),
-        
-        #Menu Item: Step 1
-        #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-        menuItem("Step 1: Sign-in", tabName = "signIn", icon = icon("address-card")),
-        
-        #Menu Item: Step 2
-        conditionalPanel(
-          condition = "input.signInDone == 1",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Step 2: Build vocab list", tabName = "building", icon = icon("clipboard-list"))
-          )),
-        
-        #Menu Item: Step 3
-        conditionalPanel(
-          condition = "input.buildingDone == 1 && output.validInput == 'List Validated!'",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
-          )),
-        
-        #Menu Item: Step 4
-        conditionalPanel(
-          condition = "input.ratingDone == 1",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Step 4: Computer analysis", tabName = "analysis", icon = icon("chart-line"))
-          )),
-        
-        #Menu Item: Step 5
-        conditionalPanel(
-          condition = "input.analysisDone == 1",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Step 5: Human validation", tabName = "validation", icon = icon("microscope"))
-          )),
-        
-        #Menu Item: Thanks!
-        conditionalPanel(
-          condition = "input.validationDone == 1",
-          sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-            menuItem("Thanks!!", tabName = "thanks", icon = icon("child"))
-          ))
+      
+      div(
+        id = "loading_page",
+        h2("Loading...")
+      ),
+      hidden(
+        div(
+          id = "sidebar_content",
+        sidebarMenu(
+          id = "sidebar",
+          
+          #Menu Item: Instructions
+          
+          menuItem("Instructions", tabName = "instructions", icon = icon("bullhorn"), badgeColor = "red"),
+          
+          #Menu Item: Step 1
+          #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+          menuItem("Step 1: Sign-in", tabName = "signIn", icon = icon("address-card")),
+          
+          #Menu Item: Step 2
+          conditionalPanel(
+            condition = "input.signInDone == 1",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Step 2: Build vocab list", tabName = "building", icon = icon("clipboard-list"))
+            )),
+          
+          #Menu Item: Step 3
+          conditionalPanel(
+            condition = "input.buildingDone == 1 && output.validInput == 'List Validated!'",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
+            )),
+          
+          #Menu Item: Step 4
+          conditionalPanel(
+            condition = "input.ratingDone == 1",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Step 4: Computer analysis", tabName = "analysis", icon = icon("chart-line"))
+            )),
+          
+          #Menu Item: Step 5
+          conditionalPanel(
+            condition = "input.analysisDone == 1",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Step 5: Human validation", tabName = "validation", icon = icon("microscope"))
+            )),
+          
+          #Menu Item: Thanks!
+          conditionalPanel(
+            condition = "input.validationDone == 1",
+            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+              menuItem("Thanks!!", tabName = "thanks", icon = icon("child"))
+            ))
+        )
+        )
       )
     ),
     
@@ -117,47 +144,37 @@ print(head(corpusfile))
         
         tabItem(tabName = "building",
                 fluidRow(
-                  column(8,
+                  column(4,
                          style='height:80px', align = "center",
                          tags$h2("Essay Prompt: What is the meaning of life?")
                   )
                 ),
                 fluidRow(
-                  column(8, wellPanel(
-                    tabsetPanel(
-                      tabPanel(title = "Text 1",
-                               div(style = 'overflow-y:scroll;height:400px;',
-                                   tags$br(),
-                                   textOutput("file1A")
-                               )
-                      ),
-                      tabPanel(title = "Text 2",
+                  #Dynamic essay text display
+                  column(8, align="center", 
+                         wellPanel(
+                           do.call(tabsetPanel, c(id='tab',lapply(1:essaysShowing, function(i) {
+                             tabPanel(
+                               title=paste0('Text ', i),
                                tags$br(),
-                               textOutput("file2A")
-                      ),
-                      
-                      tabPanel(title = "Text 3",
-                               tags$br(),
-                               textOutput("file3A")
-                      )
-                    )
-                  )
+                               textOutput(paste0('outA',i))
+                             )
+                           })))                           
+                         )
                   ),
-                  
-                  # Word list
                   column(4,
-                     wellPanel(
-                       fluidRow(
-                         column(4, align="center",
-                                uiOutput("wordInputBlanks"),
-                                actionButton(inputId="buildingDone", align="center", label="Submit my list"),
-                         ),
-                       ),
-                       tags$br(),
-                       textOutput("listValidate"),
-                       tags$br(),
-                       textOutput("validInput")
-                     )
+                         wellPanel(
+                           fluidRow(
+                             column(4, align="center",
+                                    uiOutput("wordInputBlanks"),
+                                    actionButton(inputId="buildingDone", align="center", label="Submit my list"),
+                             ),
+                           ),
+                           tags$br(),
+                           textOutput("listValidate"),
+                           tags$br(),
+                           textOutput("validInput")
+                         )
                   )
                 ),
                 fluidRow(
@@ -170,53 +187,41 @@ print(head(corpusfile))
         
         tabItem(tabName = "rating",
                 h2("Essay Rating"),
-                
                 fluidRow(
-                  column(8, wellPanel(
-                    tabsetPanel(
-                      tabPanel(title = "Text 1",
-                               div(style = 'overflow-y:scroll;height:400px;',
-                                   tags$br(),
-                                   textOutput("file1B")
-                               )
-                      ),
-                      tabPanel(title = "Text 2",
+                  #Dynamic essay text display
+                  column(8, align="center", 
+                         wellPanel(
+                           do.call(tabsetPanel, c(id='tab',lapply(1:essaysShowing, function(i) {
+                             tabPanel(
+                               title=paste0('Text ', i),
                                tags$br(),
-                               textOutput("file2B")
-                      ),
-                      
-                      tabPanel(title = "Text 3",
-                               tags$br(),
-                               textOutput("file3B")
-                      )
-                    )
-                  )
+                               textOutput(paste0('outB',i))
+                             )
+                           })))                           
+                         )
                   ),
-                  
                   column(2, align="center",
                          wellPanel(
                            "YOUR LIST:",
                             tags$ol(
-                             uiOutput("yourList")
+                             uiOutput("yourListA")
                             )
                          )
                   ),
-                  
                   column(2, align="center",
                          wellPanel(
-                           selectInput("rating1", "Rating: ESSAY A",
-                                       c("1 = best, 10 = worst" = "", 1:10)),
-                           selectInput("rating2", "Rating: ESSAY B",
-                                       c("Choose one" = "", 1:10)),
-                           selectInput("rating3", "Rating: ESSAY C",
-                                       c("Choose one" = "", 1:10)),
-                           textOutput("text3out"),
-                           textOutput("ratingsValidate"),
+                           fluidRow(
+                             column(12, align="center",
+                                    uiOutput("ratingInputSelectors"),
+                                    actionButton(inputId="ratingDone", align="center", label="Done"),
+                             ),
+                           ),
+                           tags$br(),
+                           textOutput("ratingsValidate")
                          )
                   )
                 ),
                 actionButton(inputId="ratingDone", align="center", label="Done"),
-                
         ),
         
         ### ANALYSIS ###  
@@ -224,71 +229,69 @@ print(head(corpusfile))
         tabItem(tabName = "analysis",
                 h2("Analysis"),
                 column(6, align="center",
+                       "WORD ANALYSIS",
                        wellPanel(
                          fluidRow(
-                           column(4, align="center",
+                           column(3, align="center",
                                   "YOUR LIST:",
-                                  div(id="container",'Word 1:', textOutput('word1Analysis')),
-                                  tags$br(),
-                                  div(id="container",'Word 2:', textOutput('word2Analysis')),
-                                  tags$br(),
-                                  div(id="container",'Word 3:', textOutput('word3Analysis'))
+                                  tags$ol(
+                                    uiOutput("yourListB")
+                                  ) 
                            ),
-                           column(4, align="center",
-                                  "Your Rank:",
-                                  tags$br(),
-                                  div(id="container","1"),
-                                  tags$br(),
-                                  div(id="container","2"),
-                                  tags$br(),
-                                  div(id="container","3"),
+                           column(3, align="center",
+                                  "Your word ranking:",
+                                  lapply(1:wordInputLength, function(i) {
+                                    textOutput(paste0('staticIndexYourRanking',i))
+                                  })
                            ),
-                           column(4, align="center",
+                           column(3, align="center",
                                   "Model Rank:",
-                                  div(id="container", textOutput('rankDiff1'), "(", textOutput("diff1"), ")"),
-                                  tags$br(),
-                                  div(id="container", textOutput('rankDiff2'), "(", textOutput("diff2"), ")"),
-                                  tags$br(),
-                                  div(id="container", textOutput('rankDiff3'), "(", textOutput("diff3"), ")")
-                                  
+                                  tags$ul(
+                                    uiOutput("diffReport"), style = "list-style-type: none; padding-left: 0; margin: 0"
+                                  )
+                           ),
+                           column(3, align="center",
+                                  "Word Outfit:",
+                                  tags$ul(
+                                    uiOutput("wordFitReport"), style = "list-style-type: none; padding-left: 0; margin: 0"
+                                  )
                            )
                          )
                         )
                 ),
                 column(6, align="center",
+                       "ESSAY ANALYSIS",
                        wellPanel(
                          fluidRow(
-                           column(4, align="center",
+                           column(3, align="center",
                                   "Essays:",
-                                  div(id="container",'Essay 1'),
-                                  tags$br(),
-                                  div(id="container",'Essay 2:'),
-                                  tags$br(),
-                                  div(id="container",'Essay 3:')
+                                  lapply(1:essaysShowing, function(i) {
+                                    textOutput(paste0('staticIndex',i))
+                                  })
+                                                                   
                            ),
-                           column(4, align="center",
+                           column(3, align="center",
                                   "Your Rank:",
-                                  tags$br(),
-                                  div(id="container","1"),
-                                  tags$br(),
-                                  div(id="container","2"),
-                                  tags$br(),
-                                  div(id="container","3"),
+                                  tags$ol(
+                                    uiOutput("rankedEssayOrder"), style = "list-style-type: none; padding-left: 0; margin: 0"
+                                  ) 
                            ),
-                           column(4, align="center",
+                           column(3, align="center",
                                   "Model Rank:",
-                                  div(id="container", textOutput('rankAbil1'), "(", textOutput("abil1"), ")"),
-                                  tags$br(),
-                                  div(id="container", textOutput('rankAbil2'), "(", textOutput("abil2"), ")"),
-                                  tags$br(),
-                                  div(id="container", textOutput('rankAbil3'), "(", textOutput("abil3"), ")")
-
+                                    tags$ul(
+                                      uiOutput("abilReport"), style = "list-style-type: none; padding-left: 0; margin: 0"
+                                    )
+                           ),
+                           column(3, align="center",
+                                  "Essay Outfit:",
+                                  tags$ul(
+                                    uiOutput("essayFitReport"), style = "list-style-type: none; padding-left: 0; margin: 0"
+                                  )
                            )
                          )
                        )
                 ),
-           
-                p("Please wait until analysis is complete. This could take a couple minutes if the server is busy."),
+               
                 actionButton(inputId="analysisDone", align="center", label="Done"),
         ),
         
@@ -296,15 +299,67 @@ print(head(corpusfile))
         
         tabItem(tabName = "validation",
                 h2("Validation"),
-                actionButton(inputId="validationDone", align="center", label="Done"),
+                fluidRow(
+                  column(12, align="center",
+                  wellPanel(
+                    do.call(tabsetPanel, c(id='tab',lapply(1:validationEssays, function(i) {
+                      tabPanel(
+                        title=textOutput(paste0('validationEssayTitle',i)),
+                        tags$br(),
+                        fluidRow(
+                        column(6, align="center",
+                          textOutput(paste0('validationEssay',i))
+                        ),
+                        column(6, align="center",
+                               uiOutput(paste0('validationEssayQ',i))
+                        )
+                        )
+                      )
+                    })))                           
+                  )
+                         
+                  )),
+                fluidRow(
+                  column(12, align="center",
+                         wellPanel(
+                           do.call(tabsetPanel, c(id='tab',lapply(1:validationWords, function(i) {
+                             tabPanel(
+                               title=textOutput(paste0('validationWordTitle',i)),
+                               tags$br(),
+                               fluidRow(
+                                 column(6, align="center",
+                                        textOutput(paste0('validationWord',i))
+                                 ),
+                                 column(6, align="center",
+                                        uiOutput(paste0('validationWordQ',i))
+                                 )
+                               )
+                             )
+                           })))                           
+                         )
+                         
+                  )
+                ),
+                column(6, align="center", 
+                       wellPanel(
+                         do.call(tabsetPanel, c(id='tab',lapply(1:essaysShowing, function(i) {
+                           tabPanel(
+                             title=paste0('Text ', i),
+                             tags$br(),
+                             textOutput(paste0('outC',i))
+                           )
+                         })))                           
+                       )
+                ),
+               
                 
+                actionButton(inputId="validationDone", align="center", label="Done"),
         ),
         
         ### THANKS ###  
         
         tabItem(tabName = "thanks",
                 h2("THANKS!")
-                
         )
       )
     )
@@ -312,12 +367,19 @@ print(head(corpusfile))
   
   server <- function(input, output, session){
     
+    # Session data collector
+    sessionData <- list()
+    
+    sessionData$essayData$essayTexts <- essayTexts
+    
+    #sidebar loading
+    load_data()
     
     ### SIGN IN ###
+    
     observeEvent(input$signInDone, {
       SignInTimeGMT=as.character(Sys.time())
-      signInInfo <<- c(SignInTimeGMT, input$signIn1,input$signIn2, input$signIn3)
-      print(signInInfo)
+      sessionData$signInInfo <<- c(SignInTimeGMT, input$signIn1,input$signIn2, input$signIn3)
       
       updateTabItems(session, "sidebar", "building")
       addCssClass(selector = "a[data-value='signIn']", class = "inactiveLink")
@@ -325,38 +387,45 @@ print(head(corpusfile))
     
     ### LIST BUILDING ###
 
-    #dynamically generate word input fields
-    v <<- list()
-    for (i in 1:length(wordInputLength)){
+    #dynamically generate word input fields in UI
+    v <- list()
+    for (i in 1:wordInputLength){
       v[[i]] <- textInput(paste0("word",i), label = NULL, width = '100px', placeholder = paste0("word",i))
     }
     output$wordInputBlanks <- renderUI(v)
     
-    # output$hardWords <- renderUI({
-    #   tagList(
-    #     textInput("word11", "'Hard' Words", width = '100px', placeholder = NULL),
-    #     textInput("word12", "", width = '100px', placeholder = NULL),
-    #     textInput("word13", "", width = '100px', placeholder = NULL),
-    #     textInput("word14", "", width = '100px', placeholder = NULL),
-    #     textInput("word15", "", width = '100px', placeholder = NULL)
-    #   )
-    # })
+    #dynamically display essays to UI
+    lapply(1:essaysShowing, function(j) {
+      output[[paste0('outA',j)]] <- renderPrint({
+        tags$br()
+        cat(essayTexts[[j]], sep = " ")
+      })
+    })
     
+    lapply(1:essaysShowing, function(j) {
+      output[[paste0('outB',j)]] <- renderPrint({
+        tags$br()
+        cat(essayTexts[[j]], sep = " ")
+      })
+    })
     
-    output$file1A <- renderText(essay1)
-    output$file2A <- renderText(essay2)
-    output$file3A <- renderText(essay3)
+    lapply(1:essaysShowing, function(j) {
+      output[[paste0('outC',j)]] <- renderPrint({
+        tags$br()
+        cat(essayTexts[[j]], sep = " ")
+      })
+    })
     
-    output$file1B <- renderText(essay1)
-    output$file2B <- renderText(essay2)
-    output$file3B <- renderText(essay3)
-    
+    # Dynanmic index value range to UI 
+    lapply(1:essaysShowing, function(j) {
+      output[[paste0('staticIndex',j)]] <- renderPrint({
+        tags$br()
+        cat(j)
+      })
+    })
     
     output$listValidate <- renderPrint({
-      
-
       wordList <<- lapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
-
       disable("buildingDone")
       output$validInput <- renderText('Invalid input!')
 
@@ -366,57 +435,70 @@ print(head(corpusfile))
         need(all(grepl("word\\d+", wordList) == FALSE), "You can't use the default values."),
         need(all(duplicated(wordList) == FALSE), "Each word must be unique.")
       )
+      
       enable("buildingDone")
       tags$br()
       output$validInput <- renderText('List Validated!')
     })
     
     observeEvent(input$buildingDone, {
-      vals <- as.numeric(gsub("word","", names(input)))
-      wOrder<- names(input)[order(vals)]
-      wordList <- lapply(grep(pattern = "word[[:digit:]]+", x = wOrder, value = TRUE), function(x) input[[x]])
-      wordList <<- as.data.frame(wordList)
+      M <-  grep(pattern = "word[[:digit:]]+", x = names(input), value = FALSE)
+      wOrder<- sort(names(input)[M])
+      
+    
+      print(names(input))
+      print(M)
+      print(wOrder)
+      
+      wordList <<- lapply(1:wordInputLength, function(j) {input[[paste0('word',j)]]})
+      
+      # For data collector
+      sessionData$wordData$wordList <<- wordList
+      
+      # wordList <<- as.data.frame(wordList)
 
       # Dynamically generate "wordList"
+      output$yourListA <- renderUI({
+        lapply(1:wordInputLength, function(j) tags$li(wordList[[j]]))
+      })
+      output$yourListB <- renderUI({
+        lapply(1:wordInputLength, function(j) tags$li(wordList[[j]]))
+      })
       
-      output$yourList <- renderUI({
-        lapply(grep(pattern = "word+[[:digit:]]+", x = wOrder, value = TRUE), function(x) tags$li(input[[x]]))
+      lapply(1:wordInputLength, function(j) {
+        output[[paste0('staticIndexYourRanking',j)]] <- renderPrint({
+          tags$br()
+          cat(j)
+        })
       })
 
       updateTabItems(session, "sidebar", "rating")
       addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
       
-    })
+      w <- list()
+      for (i in 1:essaysShowing){
+        w[[i]] <- selectInput(paste0("rating",i), c(paste0("Essay ",i,":")), c("Choose one", 1:essaysShowing)) 
+      }
+      output$ratingInputSelectors <- renderUI(w)
+
     
     ### ESSAY RATING ###
     
-    output$word1 <- renderText({input$word1})
-    output$word2 <- renderText({input$word2})
-    output$word3 <- renderText({input$word3})
-
-    output$test <- renderUI(sapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]]))
-    
-    # Dynamically generate "Your List"
-    # 
-    # w <<- list()
-    # for (i in 1:length(wordInputs)){
-    #   wordId <-  paste0("word", i)
-    #   w[[i]] <- renderText({input[[wordId]]})
-    #   print(w)
-    # }
-    # output$yourList <- renderUI(w)
-    
-    # Dynamically populate "Your List"
-    
-    # lapply(1:length(wordInputs), function(i) {
-    #   wordId <-  paste0("word", i)
-    #   output[[wordId]] <- renderText({input[[wordId]]})
-    # })
-
-    
-    
-    output$text3out <- renderPrint({
-      essayRatings <- c(input$rating1, input$rating2, input$rating3)
+      # Dynamically generate "ratings list"
+      output$rankedEssayOrder <- renderUI({
+        N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
+        # Ntest <- lapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
+        
+        rOrder <- sort(names(input)[N])
+        lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(input[[x]]))
+        
+        # print(Ntest)
+      })
+      
+     
+      # For data collector
+ 
+      
       # disable("ratingDone")
       # output$ratingsValidate <- renderText('Invalid ratings!')
       # 
@@ -425,15 +507,16 @@ print(head(corpusfile))
       #   need(all(duplicated(essayRatings) == FALSE), "Each rating must have a unique value.")
       # )
       # enable("ratingDone")
+      
       output$ratingsValidate <- renderText('Ratings Validated!')
     })
     
     observeEvent(input$ratingDone, {
-      ratingList <<- data.frame(input$rating1, input$rating2, input$rating3)
+      # ratingList <<- data.frame(input$rating1, input$rating2, input$rating3)
       updateTabItems(session, "sidebar", "analysis")
       addCssClass(selector = "a[data-value='rating']", class = "inactiveLink")
       
-      ## Real analysis happens here because "wordList" is inside the "observeEvent" scope 
+      ## Analysis happens before the "analysis" tab because "wordList" is inside the "observeEvent" scope 
 
       essay_scores <<- matrix(ncol = 0, nrow = length(wordList))
       essay_scores <<- as.data.frame(essay_scores)
@@ -463,44 +546,118 @@ print(head(corpusfile))
       #name columns according to filename and name rows according to "total corpus" list
       # rownames(essay_scores) <- wordList
       
-      
       essay_scores_transposed <- data.frame(t(essay_scores))
-      testTAM <- tam(essay_scores_transposed)
+      tamObj <<- tam(essay_scores_transposed, verbose = FALSE)
       
-      print(head(essay_scores))
+      wordDelta <- tamObj$xsi$xsi
+      abilEST <- tam.wle(tamObj)
+      essayTheta <- abilEST$theta
       
-      diff <- testTAM$xsi$xsi
-      abilEST <<- tam.wle(testTAM)
-      abil <- abilEST$theta
-      print(diff)
+      rankDiff <- rank(wordDelta, ties.method = "random")
       
+      #Word fit
+      wordOutfit <<- tam.fit(tamObj)
+      #index 2: outfit; index 5: infit
+      print(paste0('Word outfit: ', wordFit$item[2]))
       
-      rankDiff <- rank(c(diff[1], diff[2], diff[3]))
-      rankAbil <- rank(c(abil[1], abil[2], abil[3]))
+      #index 1: outfit; index 3: infit
+      essayFit <<- tam.personfit(tamObj)
+      essayOutfit <- essayFit$outfitPerson
+      print(paste0('Essay fit: ', essayOutfit))
       
-      output$diff1 <- renderPrint(cat(diff[1])) #cat() to remove row number from output
-      output$diff2 <- renderPrint(cat(diff[2]))
-      output$diff3 <- renderPrint(cat(diff[3]))
-      output$rankDiff1 <- renderPrint(cat(rankDiff[1]))
-      output$rankDiff2 <- renderPrint(cat(rankDiff[2]))
-      output$rankDiff3 <- renderPrint(cat(rankDiff[3]))
+      output$diffReport <- renderUI({
+        lapply(paste0(rankDiff, " delta: (", round(wordDelta,1), ")"), function(x) tags$li(x))
+      })
       
-      output$abil1 <- renderPrint(cat(abil[1])) #cat() to remove row number from output
-      output$abil2 <- renderPrint(cat(abil[2]))
-      output$abil3 <- renderPrint(cat(abil[3]))
-      output$rankAbil1 <- renderPrint(cat(rankAbil[1]))
-      output$rankAbil2 <- renderPrint(cat(rankAbil[2]))
-      output$rankAbil3 <- renderPrint(cat(rankAbil[3]))
+      #Only display info for the sample of essays 
+      sampleAbil <- essayTheta[1:essaysShowing]
+      sampleEssayOutfit <- essayOutfit[1:essaysShowing]
+      
+      # Word Fit report
+      output$wordFitReport <- renderUI({
+        lapply(round(wordOutfit$itemfit$Outfit,2), function(x) tags$li(x))
+      })
+      
+      #essay Fit report
+      output$essayFitReport <- renderUI({
+        lapply(round(sampleEssayOutfit,2), function(x) tags$li(x))
+      })
+      
+      rankAbil <- rank(sampleAbil, ties.method = "random")
+    
+      output$abilReport <- renderUI({
+        lapply(paste0(rankAbil, " theta: (", round(sampleAbil,1), ")"), function(x) tags$li(x))
+      })
+     
+      reactive({
+        print(unlist(rankDiff)-unlist(ratingList))
+      })
       
       output$listValidate <- renderText('List Validated!')
- 
+      
+      # TAM stats to data collector
+      sessionData$wordData$wordDifficulty <<- wordDelta
+      sessionData$essayData$essayLevel <<- essayTheta
+      sessionData$essayData$sampledEssayRank <<- rankAbil
+      
+      # Essay Ratings to data collector
+      N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
+      rOrder <<- sort(names(input)[N])
+      ratingsList <<- as.integer(sapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) input[[x]]))
+      sessionData$essayData$ratingsList <<- ratingsList
+    
+      exampleEssays <- sessionData$essayData$essayTexts
+      difference <- abs(sessionData$essayData$ratingsList - sessionData$essayData$sampledEssayRank)
+      
+      #Display the "j" essays with the largest rating differences
+      
+      lapply(1:validationEssays, function(j) {
+        output[[paste0('validationEssay',j)]] <- renderPrint({
+          tags$br()
+          cat(exampleEssays[[(order(difference, decreasing = TRUE)[[j]])]], sep = " ")
+        })
+      })
+      
+      lapply(1:validationEssays, function(j) {
+        output[[paste0('validationEssayTitle',j)]] <- renderPrint({
+          cat(paste0("Essay ", order(difference, decreasing = TRUE)[[j]]))
+        })
+      })
+      
+      lapply(1:validationEssays, function(j) {
+        output[[paste0('validationEssayQ',j)]] <- renderPrint({
+          wellPanel(
+            textAreaInput(paste0("validationEssayInput",j), "Response", value = "Response", width = '400px', height = '200px', placeholder = "Your response...")
+          )
+        })
+      })
+      
+      #Display the "j" words with the lowest fit stats
+      
+      lapply(1:validationWords, function(j) {
+        output[[paste0('validationWord',j)]] <- renderPrint({
+          cat(paste0("The computer thinks that '",
+          wordList[[(order(wordOutfit$itemfit$Outfit, decreasing = FALSE)[[j]])]],
+          "' is not a good word..."))
+        })
+      })
     })
     
-    ### ANALYSIS ###
+    lapply(1:validationWords, function(j) {
+      output[[paste0('validationWordTitle',j)]] <- renderPrint({
+        cat(wordList[[(order(wordOutfit$itemfit$Outfit, decreasing = FALSE)[[j]])]])
+      })
+    })
     
-    output$word1Analysis <- renderText({input$word1})
-    output$word2Analysis <- renderText({input$word2})
-    output$word3Analysis <- renderText({input$word3})
+    lapply(1:validationWords, function(j) {
+      output[[paste0('validationWordQ',j)]] <- renderPrint({
+        wellPanel(
+          textAreaInput(paste0("validationWordInput",j), "Response", value = "Response", width = '400px', height = '200px', placeholder = "Your response...")
+        )
+      })
+    })
+      
+    ### ANALYSIS ###
     
     # submit button
     
@@ -513,28 +670,15 @@ print(head(corpusfile))
     
     observeEvent(input$validationDone, {
       
-      #submit data into new data row (with <<- you  make sure the variable is updated outside of the scope of the function)
-      sessionData <- list(signin=signInInfo, words=wordList, ratings=ratingList, scores=essay_scores)
-      print(sessionData)
+      # Submit data into new collector entry
+      # wordListData <- list(wordList = wordList, scores=essay_scores, delta = numeric(), modelRating = numeric(), humanRating = ratingsList, modelFit = numeric(), SE = numeric(), comments = character())
+      # 
+      # essayData <<- list(filelist = fileslist, essay_text = essayTexts, theta = numeric(), modelRating = numeric(), humanRating = numeric(), modelFit = numeric(), SE = numeric(), comments = character())
+      # 
+      # sessionData <<- list(signin=signInInfo, wordlist_data = wordListData, essay_data = essayData)
       
-      if(file.info("../responses/resultData.rds")$size != 0){
-        resultData <- readRDS(file = "../responses/resultData.rds")
-        resultData <- rbind(resultData, sessionData)
-      } else {
-        resultData <- sessionData
-      }
-      
-      saveRDS(resultData, file = "../responses/resultData.rds")
-      print("Session Data:")
-      print(sessionData)
-      
-      rownames(resultData) <- NULL
-      colnames(resultData) <- c("ID", "Words", "Ratings", "Score" )
-      
-      print("Result Data:")      
-      print(resultData)
-      #print(resultData$ID)
-      #write.csv(resultData, "../data.csv")
+      dataCollector[[length(dataCollector)+1]] <<- sessionData
+      saveRDS(dataCollector, file = "../responses/resultData.rds")
       
       updateTabItems(session, "sidebar", "thanks")
       addCssClass(selector = "a[data-value='validation']", class = "inactiveLink")

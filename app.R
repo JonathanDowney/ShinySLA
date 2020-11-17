@@ -4,10 +4,10 @@ library(shinydashboard)
 library(TAM)
 
 # Number of word input blanks
-wordInputLength <- 12
+wordInputLength <- 5
 
 # Number of essays showing for rating
-essaysShowing <- 8
+essaysShowing <- 5
 
 # Number of essays showing for validation
 validationEssays <- 2
@@ -32,6 +32,32 @@ essayTexts <<- list()
 for (i in 1:length(fileslist)){
   #scan files in from "file list"
   essayTexts[[i]] <<- scan(file = fileslist[[i]], what="char")
+  
+  corpusfile <- essayTexts[[i]]
+  #strip punctuation (Each corpus can have unique punctuation or tagging syntax)
+  
+  # For MOECS Corpus
+  corpusfile <- gsub('<P>','',corpusfile)          
+  corpusfile <- gsub('</P>','',corpusfile)          
+  
+  # For GLC corpus
+  corpusfile <- gsub('\xa1\xaf',"",corpusfile)         
+  corpusfile <- gsub('\xfc\xbe\x8c\x96\x84\xbc\xfc\xbe\x8c\x96\x88\xbc',"",corpusfile)         
+  corpusfile <- gsub('\xa1\xb0',"",corpusfile)          
+  corpusfile <- gsub('\xa1\xae',"",corpusfile)         
+  
+  # For general corpora
+  corpusfile <- gsub('[[:punct:] ]+','',corpusfile)
+  
+  #Now remove blank tokens (because presumably they contained only punctuation)
+  corpusfile[corpusfile != ""]
+  
+  # unique lowercase tokens
+  corpusfile <- unique(tolower(corpusfile))
+  #only dictionary words
+  # corpusfile<- intersect(corpusfile, dictionary)
+  #concatenate "essay files"
+  total_corpus <<- c(corpusfile, total_corpus)
 }
 { 
   #Load sidebar after 1 second delay. Otherwise, all of the sidebar content is briefly accessible before it is hidden.
@@ -40,6 +66,16 @@ for (i in 1:length(fileslist)){
     hide("loading_page")
     show("sidebar_content")
   }
+  
+  # define "total corpus" vector
+
+  # # Concatenate all unique, non-case sensitive, punctuaction-stripped tokens from text files into "total_corpus" 
+  # for (i in 1:length(fileslist)){
+  #   #scan files in from "file list"
+  #   corpusfile <- scan(file = fileslist[i], what="char")
+  #   
+  #  
+  # }
   
   ui <- dashboardPage(
     dashboardHeader(
@@ -217,7 +253,9 @@ for (i in 1:length(fileslist)){
                              ),
                            ),
                            tags$br(),
-                           textOutput("ratingsValidate")
+                           textOutput("ratingsValidate"),
+                           tags$br(),
+                           textOutput("validInput2")
                          )
                   )
                 ),
@@ -425,12 +463,13 @@ for (i in 1:length(fileslist)){
     })
     
     output$listValidate <- renderPrint({
-      wordList <<- lapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
+      wordList <- tolower(gsub("\\s", "", lapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])))
       disable("buildingDone")
-      output$validInput <- renderText('Invalid input!')
+      # output$validInput <- renderText('Invalid input!')
 
       validate(
-        need(!("test" %in% wordList), 'Cant use test'),
+        need(!("test" %in% wordList), "Can't use test"),
+        need((all(wordList %in% total_corpus) == TRUE), 'Must use a word from the corpus'),
         need(!(any(wordList == "")), 'At least one word blank is empty.'),
         need(all(grepl("word\\d+", wordList) == FALSE), "You can't use the default values."),
         need(all(duplicated(wordList) == FALSE), "Each word must be unique.")
@@ -444,13 +483,8 @@ for (i in 1:length(fileslist)){
     observeEvent(input$buildingDone, {
       M <-  grep(pattern = "word[[:digit:]]+", x = names(input), value = FALSE)
       wOrder<- sort(names(input)[M])
-      
-    
-      print(names(input))
-      print(M)
-      print(wOrder)
-      
-      wordList <<- lapply(1:wordInputLength, function(j) {input[[paste0('word',j)]]})
+  
+      wordList <<- tolower(gsub("\\s", "", lapply(1:wordInputLength, function(j) {input[[paste0('word',j)]]})))
       
       # For data collector
       sessionData$wordData$wordList <<- wordList
@@ -475,6 +509,8 @@ for (i in 1:length(fileslist)){
       updateTabItems(session, "sidebar", "rating")
       addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
       
+    })
+      
       w <- list()
       for (i in 1:essaysShowing){
         w[[i]] <- selectInput(paste0("rating",i), c(paste0("Essay ",i,":")), c("Choose one", 1:essaysShowing)) 
@@ -493,24 +529,26 @@ for (i in 1:length(fileslist)){
         lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(input[[x]]))
         
         # print(Ntest)
+        
       })
       
      
       # For data collector
- 
       
-      # disable("ratingDone")
-      # output$ratingsValidate <- renderText('Invalid ratings!')
-      # 
-      # validate(
-      #   need(!("" %in% essayRatings), 'At least one rating field is empty.'),
-      #   need(all(duplicated(essayRatings) == FALSE), "Each rating must have a unique value.")
-      # )
-      # enable("ratingDone")
+    output$ratingsValidate <- renderPrint({
+      essayRatings <<- lapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
+      disable("ratingDone")
+      output$validInput2 <- renderText('Invalid ratings!')
+
+      validate(
+        need(!("Choose one" %in% essayRatings), 'At least one rating field is empty.'),
+        need(all(duplicated(essayRatings) == FALSE), "Each rating must have a unique value.")
+      )
+      enable("ratingDone")
       
-      output$ratingsValidate <- renderText('Ratings Validated!')
+      output$validInput2 <- renderText('Ratings Validated!')
+      
     })
-    
     observeEvent(input$ratingDone, {
       # ratingList <<- data.frame(input$rating1, input$rating2, input$rating3)
       updateTabItems(session, "sidebar", "analysis")
@@ -556,14 +594,15 @@ for (i in 1:length(fileslist)){
       rankDiff <- rank(wordDelta, ties.method = "random")
       
       #Word fit
-      wordOutfit <<- tam.fit(tamObj)
+      fitObj <- tam.fit(tamObj)
+      sessionData$wordData$wordFit <<- fitObj$itemfit
       #index 2: outfit; index 5: infit
-      print(paste0('Word outfit: ', wordFit$item[2]))
+      # print(paste0('Word outfit: ', sessionData$wordData$wordFit$item[2]))
       
       #index 1: outfit; index 3: infit
-      essayFit <<- tam.personfit(tamObj)
-      essayOutfit <- essayFit$outfitPerson
-      print(paste0('Essay fit: ', essayOutfit))
+      sessionData$essayData$essayFit <<- tam.personfit(tamObj)
+      essayOutfit <- sessionData$essayData$essayFit$outfitPerson
+      # print(paste0('Essay fit: ', essayOutfit))
       
       output$diffReport <- renderUI({
         lapply(paste0(rankDiff, " delta: (", round(wordDelta,1), ")"), function(x) tags$li(x))
@@ -575,10 +614,10 @@ for (i in 1:length(fileslist)){
       
       # Word Fit report
       output$wordFitReport <- renderUI({
-        lapply(round(wordOutfit$itemfit$Outfit,2), function(x) tags$li(x))
+        lapply(round(sessionData$wordData$wordFit$Outfit,2), function(x) tags$li(x))
       })
       
-      #essay Fit report
+      # Essay Fit report
       output$essayFitReport <- renderUI({
         lapply(round(sampleEssayOutfit,2), function(x) tags$li(x))
       })
@@ -593,8 +632,6 @@ for (i in 1:length(fileslist)){
         print(unlist(rankDiff)-unlist(ratingList))
       })
       
-      output$listValidate <- renderText('List Validated!')
-      
       # TAM stats to data collector
       sessionData$wordData$wordDifficulty <<- wordDelta
       sessionData$essayData$essayLevel <<- essayTheta
@@ -607,7 +644,7 @@ for (i in 1:length(fileslist)){
       sessionData$essayData$ratingsList <<- ratingsList
     
       exampleEssays <- sessionData$essayData$essayTexts
-      difference <- abs(sessionData$essayData$ratingsList - sessionData$essayData$sampledEssayRank)
+      difference <<- abs(sessionData$essayData$ratingsList - sessionData$essayData$sampledEssayRank)
       
       #Display the "j" essays with the largest rating differences
       
@@ -637,7 +674,7 @@ for (i in 1:length(fileslist)){
       lapply(1:validationWords, function(j) {
         output[[paste0('validationWord',j)]] <- renderPrint({
           cat(paste0("The computer thinks that '",
-          wordList[[(order(wordOutfit$itemfit$Outfit, decreasing = FALSE)[[j]])]],
+          wordList[[(order(sessionData$wordData$wordFit$Outfit, decreasing = FALSE)[[j]])]],
           "' is not a good word..."))
         })
       })
@@ -645,7 +682,7 @@ for (i in 1:length(fileslist)){
     
     lapply(1:validationWords, function(j) {
       output[[paste0('validationWordTitle',j)]] <- renderPrint({
-        cat(wordList[[(order(wordOutfit$itemfit$Outfit, decreasing = FALSE)[[j]])]])
+        cat(wordList[[(order(sessionData$wordData$wordFit$Outfit, decreasing = FALSE)[[j]])]])
       })
     })
     
@@ -656,7 +693,10 @@ for (i in 1:length(fileslist)){
         )
       })
     })
-      
+    
+    
+ 
+
     ### ANALYSIS ###
     
     # submit button
@@ -669,6 +709,22 @@ for (i in 1:length(fileslist)){
     ### VALIDATION ###
     
     observeEvent(input$validationDone, {
+
+      lapply(1:validationEssays, function(j) {
+        sessionData$essayData$flaggedEssays$essays[[j]] <<- order(difference, decreasing = TRUE)[[j]]
+      })
+      
+      lapply(1:validationEssays, function(j) {
+        sessionData$essayData$flaggedEssays$responses[[j]] <<- input[[paste0("validationEssayInput",j)]]
+      })
+      
+      lapply(1:validationWords, function(j) {
+        sessionData$wordData$flaggedWords$words[[j]] <<- wordList[[(order(sessionData$wordData$wordFit$Outfit, decreasing = FALSE))[[j]]]]
+      })
+      
+      lapply(1:validationWords, function(j) {
+        sessionData$wordData$flaggedWords$responses[[j]] <<- input[[paste0("validationWordInput",j)]]
+      })
       
       # Submit data into new collector entry
       # wordListData <- list(wordList = wordList, scores=essay_scores, delta = numeric(), modelRating = numeric(), humanRating = ratingsList, modelFit = numeric(), SE = numeric(), comments = character())

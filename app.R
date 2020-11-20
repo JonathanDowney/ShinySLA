@@ -471,7 +471,7 @@ for (i in 1:length(fileslist)){
       
       validate(
         need(!("test" %in% wordList), "Can't use test"),
-        need((all(wordList %in% total_corpus) == TRUE), 'Must use a word from the corpus'),
+        need((all(wordList %in% total_corpus) == TRUE), message = sapply(which(is.na(match(wordList, total_corpus))), function(x) paste0(toupper(wordList[x]), " is not in the learner corpus"))),
         need(!(any(wordList == "")), 'At least one word blank is empty.'),
         need(all(grepl("word\\d+", wordList) == FALSE), "You can't use the default values."),
         need(all(duplicated(wordList) == FALSE), "Each word must be unique.")

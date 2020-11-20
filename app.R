@@ -17,6 +17,9 @@ validationWords <- 4
 
 #Working directory is where you put the texts
 working_directory <- "/home/sixohthree/1016test/ICNALE_W_CHN_B2_0_N026"
+
+lemmafile <- scan(file = "/home/sixohthree/1016test/lemmafile5.txt", what="char", sep = "\n")
+
 setwd(working_directory)
 
 fileslist <<- list.files(path = working_directory)
@@ -27,6 +30,7 @@ if(file.info("../responses/resultData.rds")$size != 0){
 } else {
   dataCollector <<- list()
 }
+total_corpus <<- list()
 
 essayTexts <<- list()
 for (i in 1:length(fileslist)){
@@ -68,13 +72,11 @@ for (i in 1:length(fileslist)){
   }
   
   # define "total corpus" vector
-
+  
   # # Concatenate all unique, non-case sensitive, punctuaction-stripped tokens from text files into "total_corpus" 
   # for (i in 1:length(fileslist)){
   #   #scan files in from "file list"
   #   corpusfile <- scan(file = fileslist[i], what="char")
-  #   
-  #  
   # }
   
   ui <- dashboardPage(
@@ -94,61 +96,61 @@ for (i in 1:length(fileslist)){
       hidden(
         div(
           id = "sidebar_content",
-        sidebarMenu(
-          id = "sidebar",
-          
-          #Menu Item: Instructions
-          
-          menuItem("Instructions", tabName = "instructions", icon = icon("bullhorn"), badgeColor = "red"),
-          
-          #Menu Item: Step 1
-          #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-          menuItem("Step 1: Sign-in", tabName = "signIn", icon = icon("address-card")),
-          
-          #Menu Item: Step 2
-          conditionalPanel(
-            condition = "input.signInDone == 1",
-            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-              menuItem("Step 2: Build vocab list", tabName = "building", icon = icon("clipboard-list"))
-            )),
-          
-          #Menu Item: Step 3
-          conditionalPanel(
-            condition = "input.buildingDone == 1 && output.validInput == 'List Validated!'",
-            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-              menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
-            )),
-          
-          #Menu Item: Step 4
-          conditionalPanel(
-            condition = "input.ratingDone == 1",
-            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-              menuItem("Step 4: Computer analysis", tabName = "analysis", icon = icon("chart-line"))
-            )),
-          
-          #Menu Item: Step 5
-          conditionalPanel(
-            condition = "input.analysisDone == 1",
-            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-              menuItem("Step 5: Human validation", tabName = "validation", icon = icon("microscope"))
-            )),
-          
-          #Menu Item: Thanks!
-          conditionalPanel(
-            condition = "input.validationDone == 1",
-            sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
-              menuItem("Thanks!!", tabName = "thanks", icon = icon("child"))
-            ))
-        )
+          sidebarMenu(
+            id = "sidebar",
+            
+            #Menu Item: Instructions
+            
+            menuItem("Instructions", tabName = "instructions", icon = icon("bullhorn"), badgeColor = "red"),
+            
+            #Menu Item: Step 1
+            #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+            menuItem("Step 1: Sign-in", tabName = "signIn", icon = icon("address-card")),
+            
+            #Menu Item: Step 2
+            conditionalPanel(
+              condition = "input.signInDone == 1",
+              sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+                menuItem("Step 2: Build vocab list", tabName = "building", icon = icon("clipboard-list"))
+              )),
+            
+            #Menu Item: Step 3
+            conditionalPanel(
+              condition = "input.buildingDone == 1 && output.validInput == 'List Validated!'",
+              sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+                menuItem("Step 3: Essay rating", tabName = "rating", icon = icon("chart-line"))
+              )),
+            
+            #Menu Item: Step 4
+            conditionalPanel(
+              condition = "input.ratingDone == 1",
+              sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+                menuItem("Step 4: Computer analysis", tabName = "analysis", icon = icon("chart-line"))
+              )),
+            
+            #Menu Item: Step 5
+            conditionalPanel(
+              condition = "input.analysisDone == 1",
+              sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+                menuItem("Step 5: Human validation", tabName = "validation", icon = icon("microscope"))
+              )),
+            
+            #Menu Item: Thanks!
+            conditionalPanel(
+              condition = "input.validationDone == 1",
+              sidebarMenu(                                                                                 #https://stackoverflow.com/questions/36495234/conditionalpanel-around-menuitem-doesnt-display-properly
+                menuItem("Thanks!!", tabName = "thanks", icon = icon("child"))
+              ))
+          )
         )
       )
     ),
     
     dashboardBody(
       tags$head(
-      tags$head(
-        tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
-        tags$style("#container * {display: inline;}")),
+        tags$head(
+          tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
+          tags$style("#container * {display: inline;}")),
       ),
       tabItems(
         
@@ -239,9 +241,9 @@ for (i in 1:length(fileslist)){
                   column(2, align="center",
                          wellPanel(
                            "YOUR LIST:",
-                            tags$ol(
+                           tags$ol(
                              uiOutput("yourListA")
-                            )
+                           )
                          )
                   ),
                   column(2, align="center",
@@ -295,7 +297,7 @@ for (i in 1:length(fileslist)){
                                   )
                            )
                          )
-                        )
+                       )
                 ),
                 column(6, align="center",
                        "ESSAY ANALYSIS",
@@ -306,7 +308,7 @@ for (i in 1:length(fileslist)){
                                   lapply(1:essaysShowing, function(i) {
                                     textOutput(paste0('staticIndex',i))
                                   })
-                                                                   
+                                  
                            ),
                            column(3, align="center",
                                   "Your Rank:",
@@ -316,9 +318,9 @@ for (i in 1:length(fileslist)){
                            ),
                            column(3, align="center",
                                   "Model Rank:",
-                                    tags$ul(
-                                      uiOutput("abilReport"), style = "list-style-type: none; padding-left: 0; margin: 0"
-                                    )
+                                  tags$ul(
+                                    uiOutput("abilReport"), style = "list-style-type: none; padding-left: 0; margin: 0"
+                                  )
                            ),
                            column(3, align="center",
                                   "Essay Outfit:",
@@ -329,7 +331,7 @@ for (i in 1:length(fileslist)){
                          )
                        )
                 ),
-               
+                
                 actionButton(inputId="analysisDone", align="center", label="Done"),
         ),
         
@@ -339,22 +341,22 @@ for (i in 1:length(fileslist)){
                 h2("Validation"),
                 fluidRow(
                   column(12, align="center",
-                  wellPanel(
-                    do.call(tabsetPanel, c(id='tab',lapply(1:validationEssays, function(i) {
-                      tabPanel(
-                        title=textOutput(paste0('validationEssayTitle',i)),
-                        tags$br(),
-                        fluidRow(
-                        column(6, align="center",
-                          textOutput(paste0('validationEssay',i))
-                        ),
-                        column(6, align="center",
-                               uiOutput(paste0('validationEssayQ',i))
-                        )
-                        )
-                      )
-                    })))                           
-                  )
+                         wellPanel(
+                           do.call(tabsetPanel, c(id='tab',lapply(1:validationEssays, function(i) {
+                             tabPanel(
+                               title=textOutput(paste0('validationEssayTitle',i)),
+                               tags$br(),
+                               fluidRow(
+                                 column(6, align="center",
+                                        textOutput(paste0('validationEssay',i))
+                                 ),
+                                 column(6, align="center",
+                                        uiOutput(paste0('validationEssayQ',i))
+                                 )
+                               )
+                             )
+                           })))                           
+                         )
                          
                   )),
                 fluidRow(
@@ -389,7 +391,7 @@ for (i in 1:length(fileslist)){
                          })))                           
                        )
                 ),
-               
+                
                 
                 actionButton(inputId="validationDone", align="center", label="Done"),
         ),
@@ -424,7 +426,7 @@ for (i in 1:length(fileslist)){
     })
     
     ### LIST BUILDING ###
-
+    
     #dynamically generate word input fields in UI
     v <- list()
     for (i in 1:wordInputLength){
@@ -466,7 +468,7 @@ for (i in 1:length(fileslist)){
       wordList <- tolower(gsub("\\s", "", lapply(grep(pattern = "word[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])))
       disable("buildingDone")
       # output$validInput <- renderText('Invalid input!')
-
+      
       validate(
         need(!("test" %in% wordList), "Can't use test"),
         need((all(wordList %in% total_corpus) == TRUE), 'Must use a word from the corpus'),
@@ -483,14 +485,24 @@ for (i in 1:length(fileslist)){
     observeEvent(input$buildingDone, {
       M <-  grep(pattern = "word[[:digit:]]+", x = names(input), value = FALSE)
       wOrder<- sort(names(input)[M])
-  
-      wordList <<- tolower(gsub("\\s", "", lapply(1:wordInputLength, function(j) {input[[paste0('word',j)]]})))
+      
+      wordList <<- toupper(gsub("\\s", "", lapply(1:wordInputLength, function(j) {input[[paste0('word',j)]]})))
+      
+      lemmaIn <- (wordList)
+      print(lemmaIn)
+      a <- lapply(lemmaIn, function(b) grep(paste0('.*(\\W|\\s)',b,'(,\\w*)*$'), lemmafile, value = TRUE))
+      lemmaOut <- sapply(1:length(a), function(c) sub(paste0('(','\\b',')\\s->\\s.*',lemmaIn[c],'.*$'),"\\1",a[c]))
+      sapply(1:length(lemmaOut), function(d) if(lemmaOut[d] == "character(0)"){lemmaOut[d] <<- lemmaIn[d]})
+      
+      wordList <<- lemmaOut
+      print(lemmaOut)
+      
       
       # For data collector
       sessionData$wordData$wordList <<- wordList
       
       # wordList <<- as.data.frame(wordList)
-
+      
       # Dynamically generate "wordList"
       output$yourListA <- renderUI({
         lapply(1:wordInputLength, function(j) tags$li(wordList[[j]]))
@@ -505,41 +517,41 @@ for (i in 1:length(fileslist)){
           cat(j)
         })
       })
-
+      
       updateTabItems(session, "sidebar", "rating")
       addCssClass(selector = "a[data-value='building']", class = "inactiveLink")
       
     })
-      
-      w <- list()
-      for (i in 1:essaysShowing){
-        w[[i]] <- selectInput(paste0("rating",i), c(paste0("Essay ",i,":")), c("Choose one", 1:essaysShowing)) 
-      }
-      output$ratingInputSelectors <- renderUI(w)
-
+    
+    w <- list()
+    for (i in 1:essaysShowing){
+      w[[i]] <- selectInput(paste0("rating",i), c(paste0("Essay ",i,":")), c("Choose one", 1:essaysShowing)) 
+    }
+    output$ratingInputSelectors <- renderUI(w)
+    
     
     ### ESSAY RATING ###
     
-      # Dynamically generate "ratings list"
-      output$rankedEssayOrder <- renderUI({
-        N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
-        # Ntest <- lapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
-        
-        rOrder <- sort(names(input)[N])
-        lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(input[[x]]))
-        
-        # print(Ntest)
-        
-      })
+    # Dynamically generate "ratings list"
+    output$rankedEssayOrder <- renderUI({
+      N <-  grep(pattern = "rating[[:digit:]]+", x = names(input), value = FALSE)
+      # Ntest <- lapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
       
-     
-      # For data collector
+      rOrder <- sort(names(input)[N])
+      lapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) tags$li(input[[x]]))
       
+      # print(Ntest)
+      
+    })
+    
+    
+    # For data collector
+    
     output$ratingsValidate <- renderPrint({
       essayRatings <<- lapply(grep(pattern = "rating[[:digit:]]+", x = names(input), value = TRUE), function(x) input[[x]])
       disable("ratingDone")
       output$validInput2 <- renderText('Invalid ratings!')
-
+      
       validate(
         need(!("Choose one" %in% essayRatings), 'At least one rating field is empty.'),
         need(all(duplicated(essayRatings) == FALSE), "Each rating must have a unique value.")
@@ -555,7 +567,7 @@ for (i in 1:length(fileslist)){
       addCssClass(selector = "a[data-value='rating']", class = "inactiveLink")
       
       ## Analysis happens before the "analysis" tab because "wordList" is inside the "observeEvent" scope 
-
+      
       essay_scores <<- matrix(ncol = 0, nrow = length(wordList))
       essay_scores <<- as.data.frame(essay_scores)
       
@@ -573,7 +585,8 @@ for (i in 1:length(fileslist)){
         essayfile[essayfile != ""]
         
         # Include only unique tokens (non-case-sensitive)
-        essayfile <- unique(tolower((essayfile)))
+        # To upper because lemma reference file is all-caps
+        essayfile <- unique(toupper((essayfile)))
         
         #score the essay file according to how many "total_corpus" words are used
         essay_score <- as.numeric(wordList %in% essayfile)
@@ -623,11 +636,11 @@ for (i in 1:length(fileslist)){
       })
       
       rankAbil <- rank(sampleAbil, ties.method = "random")
-    
+      
       output$abilReport <- renderUI({
         lapply(paste0(rankAbil, " theta: (", round(sampleAbil,1), ")"), function(x) tags$li(x))
       })
-     
+      
       reactive({
         print(unlist(rankDiff)-unlist(ratingList))
       })
@@ -642,7 +655,7 @@ for (i in 1:length(fileslist)){
       rOrder <<- sort(names(input)[N])
       ratingsList <<- as.integer(sapply(grep(pattern = "rating[[:digit:]]+", x = rOrder, value = TRUE), function(x) input[[x]]))
       sessionData$essayData$ratingsList <<- ratingsList
-    
+      
       exampleEssays <- sessionData$essayData$essayTexts
       difference <<- abs(sessionData$essayData$ratingsList - sessionData$essayData$sampledEssayRank)
       
@@ -674,8 +687,8 @@ for (i in 1:length(fileslist)){
       lapply(1:validationWords, function(j) {
         output[[paste0('validationWord',j)]] <- renderPrint({
           cat(paste0("The computer thinks that '",
-          wordList[[(order(sessionData$wordData$wordFit$Outfit, decreasing = FALSE)[[j]])]],
-          "' is not a good word..."))
+                     wordList[[(order(sessionData$wordData$wordFit$Outfit, decreasing = FALSE)[[j]])]],
+                     "' is not a good word..."))
         })
       })
     })
@@ -695,8 +708,8 @@ for (i in 1:length(fileslist)){
     })
     
     
- 
-
+    
+    
     ### ANALYSIS ###
     
     # submit button
@@ -709,7 +722,7 @@ for (i in 1:length(fileslist)){
     ### VALIDATION ###
     
     observeEvent(input$validationDone, {
-
+      
       lapply(1:validationEssays, function(j) {
         sessionData$essayData$flaggedEssays$essays[[j]] <<- order(difference, decreasing = TRUE)[[j]]
       })
